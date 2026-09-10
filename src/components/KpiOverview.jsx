@@ -58,12 +58,12 @@ export default function KpiOverview({ stats }) {
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: '14px', margin: '10px 0 6px 0' }}>
-          <span style={{ fontSize: '1.9rem', fontWeight: 800, color: '#38bdf8' }}>
-            {stats.totalMale?.toLocaleString('id-ID')} <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#94a3b8', display: 'block' }}>Laki-laki</span>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px', margin: '8px 0 6px 0', flexWrap: 'wrap' }}>
+          <span style={{ fontSize: 'clamp(1.2rem, 4vw, 1.8rem)', fontWeight: 800, color: '#38bdf8', lineHeight: '1.2' }}>
+            {stats.totalMale?.toLocaleString('id-ID')} <span style={{ fontSize: '0.7rem', fontWeight: 600, color: '#94a3b8', display: 'block' }}>Laki-laki</span>
           </span>
-          <span style={{ fontSize: '1.9rem', fontWeight: 800, color: '#ec4899' }}>
-            {stats.totalFemale?.toLocaleString('id-ID')} <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#94a3b8', display: 'block' }}>Perempuan</span>
+          <span style={{ fontSize: 'clamp(1.2rem, 4vw, 1.8rem)', fontWeight: 800, color: '#ec4899', lineHeight: '1.2' }}>
+            {stats.totalFemale?.toLocaleString('id-ID')} <span style={{ fontSize: '0.7rem', fontWeight: 600, color: '#94a3b8', display: 'block' }}>Perempuan</span>
           </span>
         </div>
 
