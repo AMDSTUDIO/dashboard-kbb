@@ -47,7 +47,7 @@ export default function Navbar({
   return (
     <>
       <header className="glass-card" style={{ borderRadius: 0, borderTop: 0, borderLeft: 0, borderRight: 0, position: 'sticky', top: 0, zIndex: 100 }}>
-        <div style={{ maxWidth: '1640px', margin: '0 auto', padding: '12px 16px' }}>
+        <div style={{ maxWidth: '1640px', margin: '0 auto', padding: '10px 14px' }}>
           
           {/* Top Header Row */}
           <div style={{ 
@@ -55,69 +55,66 @@ export default function Navbar({
             justifyContent: 'space-between', 
             alignItems: 'center', 
             flexWrap: 'wrap',
-            gap: '12px', 
-            marginBottom: '12px' 
+            gap: '8px', 
+            marginBottom: '8px' 
           }}>
             
             {/* Brand & Emblem BKPSDM (Left) */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
               <div style={{ 
-                padding: '4px 8px', 
-                borderRadius: '10px', 
+                padding: '3px 6px', 
+                borderRadius: '8px', 
                 background: '#ffffff', 
                 border: '1px solid rgba(255, 255, 255, 0.9)',
                 display: 'flex', 
                 alignItems: 'center', 
                 justifyContent: 'center',
-                boxShadow: '0 4px 16px rgba(0, 0, 0, 0.3)',
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
                 flexShrink: 0
               }}>
                 <img 
                   src="/logo-bkpsdm.png" 
                   alt="Logo BKPSDM KBB" 
-                  style={{ height: '36px', width: 'auto', objectFit: 'contain' }} 
+                  style={{ height: '30px', width: 'auto', objectFit: 'contain' }} 
                 />
               </div>
               <div style={{ minWidth: 0 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                  <h1 style={{ fontSize: 'clamp(1rem, 2.5vw, 1.25rem)', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.02em', margin: 0, whiteSpace: 'nowrap' }}>
-                    DASHBOARD KEPEGAWAIAN <span style={{ color: '#38bdf8' }}>EKSEKUTIF</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <h1 style={{ fontSize: 'clamp(0.85rem, 2.5vw, 1.15rem)', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.02em', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    DASHBOARD <span style={{ color: '#38bdf8' }}>EKSEKUTIF</span>
                   </h1>
-                  <span className="badge badge-sky" style={{ fontSize: '0.6rem', padding: '2px 6px' }}>
-                    <Sparkles style={{ width: '9px', height: '9px' }} /> LIVE
-                  </span>
                 </div>
-                <p style={{ fontSize: '0.725rem', color: '#94a3b8', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  Pemerintah Kabupaten Bandung Barat
+                <p style={{ fontSize: '0.65rem', color: '#94a3b8', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  BKPSDM Kab. Bandung Barat
                 </p>
               </div>
             </div>
 
             {/* Controls, User & Admin Actions (Right) */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginLeft: 'auto' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginLeft: 'auto' }}>
               
-              {/* Live Indicator */}
+              {/* Live Status Pill */}
               <div 
                 style={{ 
                   display: 'flex', 
                   alignItems: 'center', 
-                  gap: '6px', 
+                  gap: '5px', 
                   background: 'rgba(15, 23, 42, 0.7)', 
-                  padding: '5px 10px', 
-                  borderRadius: '10px',
+                  padding: '4px 8px', 
+                  borderRadius: '8px',
                   border: '1px solid rgba(255,255,255,0.08)'
                 }}
                 title={`Update Terakhir: ${formattedTime} ${source === 'cache' ? '(Cache)' : '(Live)'}`}
               >
                 <div className="pulse-dot" />
-                <div style={{ fontSize: '0.725rem', color: '#94a3b8' }}>
+                <div style={{ fontSize: '0.68rem', color: '#94a3b8' }}>
                   <strong style={{ color: '#f8fafc' }}>{formattedTime}</strong>
                 </div>
               </div>
 
               {/* Total Records Counter */}
               {totalRecords > 0 && (
-                <div className="badge badge-sky" style={{ fontSize: '0.68rem', padding: '4px 8px' }}>
+                <div className="badge badge-sky" style={{ fontSize: '0.65rem', padding: '3px 7px' }}>
                   {totalRecords.toLocaleString('id-ID')} Data
                 </div>
               )}
@@ -128,17 +125,17 @@ export default function Navbar({
                   onClick={onOpenAdminUserModal}
                   className="btn-secondary"
                   style={{
-                    padding: '6px 10px',
+                    padding: '4px 8px',
                     background: 'rgba(56, 189, 248, 0.1)',
                     borderColor: 'rgba(56, 189, 248, 0.3)',
                     color: '#38bdf8',
-                    borderRadius: '10px',
-                    fontSize: '0.775rem',
+                    borderRadius: '8px',
+                    fontSize: '0.725rem',
                     fontWeight: 700
                   }}
                   title="Kelola & Buat Akun Pengguna Manual"
                 >
-                  <UserPlus style={{ width: '14px', height: '14px' }} />
+                  <UserPlus style={{ width: '13px', height: '13px' }} />
                   <span>+ Akun</span>
                 </button>
               )}
@@ -148,37 +145,34 @@ export default function Navbar({
                 onClick={onRefresh} 
                 disabled={isSyncing}
                 className="btn-primary"
-                style={{ padding: '6px 12px', borderRadius: '10px', fontSize: '0.775rem' }}
+                style={{ padding: '4px 10px', borderRadius: '8px', fontSize: '0.725rem' }}
                 title="Sinkronkan data terbaru dari Google Sheets"
               >
-                <RefreshCw className={isSyncing ? 'spin-icon' : ''} style={{ width: '14px', height: '14px' }} />
-                {isSyncing ? 'Sync...' : 'Live Sync'}
+                <RefreshCw className={isSyncing ? 'spin-icon' : ''} style={{ width: '13px', height: '13px' }} />
+                {isSyncing ? 'Sync...' : 'Sync'}
               </button>
 
               {/* Current User Profile Badge */}
               {currentUser && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', paddingLeft: '6px', borderLeft: '1px solid rgba(255, 255, 255, 0.1)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(255, 255, 255, 0.1)', padding: '3px 8px', borderRadius: '10px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', paddingLeft: '4px', borderLeft: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '5px', background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(255, 255, 255, 0.1)', padding: '2px 6px', borderRadius: '8px' }}>
                     <div style={{ 
-                      width: '24px', 
-                      height: '24px', 
+                      width: '22px', 
+                      height: '22px', 
                       borderRadius: '50%', 
                       background: '#0284c7', 
                       color: '#ffffff', 
                       display: 'flex', 
                       alignItems: 'center', 
                       justifyContent: 'center',
-                      fontSize: '0.65rem',
+                      fontSize: '0.6rem',
                       fontWeight: 800
                     }}>
                       {currentUser.avatar || 'US'}
                     </div>
                     <div style={{ textAlign: 'left', lineHeight: '1.1' }}>
-                      <div style={{ fontSize: '0.725rem', fontWeight: 700, color: '#ffffff', maxWidth: '100px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <div style={{ fontSize: '0.68rem', fontWeight: 700, color: '#ffffff', maxWidth: '85px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {currentUser.name}
-                      </div>
-                      <div style={{ fontSize: '0.625rem', color: '#38bdf8' }}>
-                        {currentUser.role}
                       </div>
                     </div>
                   </div>
@@ -187,16 +181,16 @@ export default function Navbar({
                     onClick={() => setShowLogoutConfirm(true)}
                     className="btn-secondary"
                     style={{
-                      padding: '5px 8px',
+                      padding: '4px 6px',
                       color: '#f43f5e',
                       borderColor: 'rgba(244, 63, 94, 0.3)',
-                      borderRadius: '8px',
+                      borderRadius: '6px',
                       display: 'flex',
                       alignItems: 'center'
                     }}
                     title="Keluar dari akun"
                   >
-                    <LogOut style={{ width: '14px', height: '14px' }} />
+                    <LogOut style={{ width: '13px', height: '13px' }} />
                   </button>
                 </div>
               )}
@@ -209,13 +203,13 @@ export default function Navbar({
             display: 'flex', 
             justifyContent: 'space-between', 
             alignItems: 'center', 
-            gap: '12px', 
+            gap: '8px', 
             borderTop: '1px solid rgba(255, 255, 255, 0.05)', 
-            paddingTop: '10px',
+            paddingTop: '8px',
             flexWrap: 'wrap'
           }}>
             {/* Left: Nav Tab Buttons (Touch scrollable horizontal container) */}
-            <div className="tab-scroll-container" style={{ flex: 1, minWidth: '280px' }}>
+            <div className="tab-scroll-container" style={{ flex: '1 1 260px', width: '100%', paddingBottom: '2px' }}>
               {tabs.map((tab) => {
                 const Icon = tab.icon;
                 const isActive = activeTab === tab.id;
@@ -224,8 +218,9 @@ export default function Navbar({
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
                     className={`btn-tab ${isActive ? 'active' : ''}`}
+                    style={{ padding: '6px 12px', fontSize: '0.775rem' }}
                   >
-                    <Icon style={{ width: '16px', height: '16px', color: isActive ? '#38bdf8' : '#94a3b8' }} />
+                    <Icon style={{ width: '14px', height: '14px', color: isActive ? '#38bdf8' : '#94a3b8' }} />
                     {tab.label}
                   </button>
                 );
@@ -233,7 +228,7 @@ export default function Navbar({
             </div>
 
             {/* Right: Quick Search Box */}
-            <div style={{ width: '100%', maxWidth: '340px' }}>
+            <div style={{ flex: '1 1 240px', width: '100%', maxWidth: '340px' }}>
               <QuickSearch 
                 employees={employees} 
                 onSelectEmployee={onSelectEmployee} 
