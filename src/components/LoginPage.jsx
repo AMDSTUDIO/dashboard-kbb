@@ -130,15 +130,15 @@ export default function LoginPage({ onLoginSuccess }) {
           )}
 
           {/* Form */}
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '18px', width: '100%', boxSizing: 'border-box' }}>
             
             {/* Username / NIP Field */}
-            <div>
+            <div style={{ width: '100%', boxSizing: 'border-box' }}>
               <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#cbd5e1', marginBottom: '6px' }}>
                 NIP atau Username
               </label>
-              <div style={{ position: 'relative' }}>
-                <div style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#64748b' }}>
+              <div style={{ position: 'relative', width: '100%', boxSizing: 'border-box' }}>
+                <div style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#64748b', display: 'flex', alignItems: 'center', pointerEvents: 'none', zIndex: 2 }}>
                   <User style={{ width: '18px', height: '18px' }} />
                 </div>
                 <input 
@@ -149,12 +149,13 @@ export default function LoginPage({ onLoginSuccess }) {
                   required
                   style={{
                     width: '100%',
+                    boxSizing: 'border-box',
                     padding: '12px 14px 12px 42px',
                     background: 'rgba(15, 23, 42, 0.7)',
                     border: '1px solid rgba(255, 255, 255, 0.12)',
                     borderRadius: '12px',
                     color: '#ffffff',
-                    fontSize: '0.9rem',
+                    fontSize: '0.875rem',
                     outline: 'none',
                     transition: 'all 0.2s'
                   }}
@@ -165,12 +166,12 @@ export default function LoginPage({ onLoginSuccess }) {
             </div>
 
             {/* Password Field */}
-            <div>
+            <div style={{ width: '100%', boxSizing: 'border-box' }}>
               <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#cbd5e1', marginBottom: '6px' }}>
                 Kata Sandi
               </label>
-              <div style={{ position: 'relative' }}>
-                <div style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#64748b' }}>
+              <div style={{ position: 'relative', width: '100%', boxSizing: 'border-box' }}>
+                <div style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#64748b', display: 'flex', alignItems: 'center', pointerEvents: 'none', zIndex: 2 }}>
                   <Lock style={{ width: '18px', height: '18px' }} />
                 </div>
                 <input 
@@ -181,12 +182,13 @@ export default function LoginPage({ onLoginSuccess }) {
                   required
                   style={{
                     width: '100%',
+                    boxSizing: 'border-box',
                     padding: '12px 44px 12px 42px',
                     background: 'rgba(15, 23, 42, 0.7)',
                     border: '1px solid rgba(255, 255, 255, 0.12)',
                     borderRadius: '12px',
                     color: '#ffffff',
-                    fontSize: '0.9rem',
+                    fontSize: '0.875rem',
                     outline: 'none',
                     transition: 'all 0.2s'
                   }}
@@ -207,7 +209,8 @@ export default function LoginPage({ onLoginSuccess }) {
                     cursor: 'pointer',
                     padding: '4px',
                     display: 'flex',
-                    alignItems: 'center'
+                    alignItems: 'center',
+                    zIndex: 2
                   }}
                 >
                   {showPassword ? <EyeOff style={{ width: '18px', height: '18px' }} /> : <Eye style={{ width: '18px', height: '18px' }} />}
@@ -216,7 +219,7 @@ export default function LoginPage({ onLoginSuccess }) {
             </div>
 
             {/* Remember Me Checkbox */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.8rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.8rem', flexWrap: 'wrap', gap: '8px' }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#94a3b8', cursor: 'pointer', userSelect: 'none' }}>
                 <input 
                   type="checkbox"
@@ -238,12 +241,12 @@ export default function LoginPage({ onLoginSuccess }) {
               className="btn-primary"
               style={{
                 width: '100%',
-                padding: '14px',
+                padding: '12px 16px',
                 borderRadius: '12px',
                 justifyContent: 'center',
-                fontSize: '0.95rem',
+                fontSize: '0.9rem',
                 fontWeight: 700,
-                marginTop: '6px'
+                marginTop: '4px'
               }}
             >
               {isSubmitting ? (

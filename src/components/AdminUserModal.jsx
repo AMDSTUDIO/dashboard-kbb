@@ -69,33 +69,34 @@ export default function AdminUserModal({ onClose }) {
         
         {/* Header */}
         <div style={{ 
-          padding: '20px 24px', 
+          padding: '16px 20px', 
           borderBottom: '1px solid rgba(255, 255, 255, 0.08)', 
           display: 'flex', 
           justifyContent: 'space-between', 
           alignItems: 'center',
           background: 'rgba(15, 23, 42, 0.8)'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <div style={{ 
-              padding: '8px', 
-              borderRadius: '10px', 
+              padding: '6px', 
+              borderRadius: '8px', 
               background: 'rgba(56, 189, 248, 0.12)', 
-              color: '#38bdf8' 
+              color: '#38bdf8',
+              flexShrink: 0
             }}>
-              <UserPlus style={{ width: '22px', height: '22px' }} />
+              <UserPlus style={{ width: '20px', height: '20px' }} />
             </div>
             <div>
-              <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
-                Manajemen & Pembuatan Akun Pengguna
+              <h3 style={{ fontSize: 'clamp(0.95rem, 3.5vw, 1.15rem)', fontWeight: 800, color: '#ffffff', margin: 0, lineHeight: 1.2 }}>
+                Manajemen & Pembuatan Akun
               </h3>
-              <p style={{ fontSize: '0.785rem', color: '#94a3b8', margin: 0 }}>
-                Tambahkan akun admin atau pimpinan secara manual
+              <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: '2px 0 0 0' }}>
+                Kelola akun admin atau pimpinan secara manual
               </p>
             </div>
           </div>
 
-          <button onClick={onClose} className="btn-secondary" style={{ padding: '6px', borderRadius: '50%', border: 'none' }}>
+          <button onClick={onClose} className="btn-secondary" style={{ padding: '6px', borderRadius: '50%', border: 'none', flexShrink: 0 }}>
             <X style={{ width: '18px', height: '18px' }} />
           </button>
         </div>
@@ -106,44 +107,44 @@ export default function AdminUserModal({ onClose }) {
             onClick={() => setActiveTab('create')}
             style={{
               flex: 1,
-              padding: '12px',
+              padding: '10px 8px',
               border: 'none',
               background: activeTab === 'create' ? 'rgba(56, 189, 248, 0.12)' : 'transparent',
               color: activeTab === 'create' ? '#38bdf8' : '#94a3b8',
               fontWeight: 700,
-              fontSize: '0.85rem',
+              fontSize: '0.785rem',
               cursor: 'pointer',
               borderBottom: activeTab === 'create' ? '2px solid #38bdf8' : '2px solid transparent',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: '8px'
+              gap: '6px'
             }}
           >
-            <UserPlus style={{ width: '16px', height: '16px' }} />
-            Form Buat Akun Baru
+            <UserPlus style={{ width: '14px', height: '14px' }} />
+            Buat Akun Baru
           </button>
 
           <button
             onClick={() => setActiveTab('list')}
             style={{
               flex: 1,
-              padding: '12px',
+              padding: '10px 8px',
               border: 'none',
               background: activeTab === 'list' ? 'rgba(56, 189, 248, 0.12)' : 'transparent',
               color: activeTab === 'list' ? '#38bdf8' : '#94a3b8',
               fontWeight: 700,
-              fontSize: '0.85rem',
+              fontSize: '0.785rem',
               cursor: 'pointer',
               borderBottom: activeTab === 'list' ? '2px solid #38bdf8' : '2px solid transparent',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: '8px'
+              gap: '6px'
             }}
           >
-            <Users style={{ width: '16px', height: '16px' }} />
-            Daftar Akun Terdaftar ({usersList.length})
+            <Users style={{ width: '14px', height: '14px' }} />
+            Daftar Akun ({usersList.length})
           </button>
         </div>
 

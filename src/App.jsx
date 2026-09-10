@@ -176,81 +176,81 @@ export default function App() {
       {selectedEmployeeDetail && (
         <div className="modal-overlay" onClick={() => setSelectedEmployeeDetail(null)}>
           <div className="modal-content" style={{ maxWidth: '650px' }} onClick={(e) => e.stopPropagation()}>
-            <div style={{ padding: '20px 24px', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <ShieldCheck style={{ color: '#38bdf8', width: '22px', height: '22px' }} />
-                <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <ShieldCheck style={{ color: '#38bdf8', width: '20px', height: '20px', flexShrink: 0 }} />
+                <h3 style={{ fontSize: 'clamp(0.95rem, 3.5vw, 1.15rem)', fontWeight: 800, color: '#ffffff', margin: 0 }}>
                   Kartu Detail Profil Pegawai
                 </h3>
               </div>
-              <button onClick={() => setSelectedEmployeeDetail(null)} className="btn-secondary" style={{ padding: '6px', borderRadius: '50%', border: 'none' }}>
+              <button onClick={() => setSelectedEmployeeDetail(null)} className="btn-secondary" style={{ padding: '6px', borderRadius: '50%', border: 'none', flexShrink: 0 }}>
                 <X style={{ width: '18px', height: '18px' }} />
               </button>
             </div>
 
-            <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: '14px', overflowY: 'auto', flex: 1 }}>
               <div>
-                <h2 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>{selectedEmployeeDetail.nama}</h2>
-                <div style={{ fontSize: '0.85rem', color: '#38bdf8', fontFamily: 'monospace', marginTop: '2px' }}>NIP. {selectedEmployeeDetail.nip}</div>
-                <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
-                  <span className={selectedEmployeeDetail.statusAsn === 'PNS' ? 'badge badge-pns' : 'badge badge-pppk'}>
+                <h2 style={{ fontSize: 'clamp(1.1rem, 4vw, 1.3rem)', fontWeight: 800, color: '#ffffff', margin: 0 }}>{selectedEmployeeDetail.nama}</h2>
+                <div style={{ fontSize: '0.8rem', color: '#38bdf8', fontFamily: 'monospace', marginTop: '2px' }}>NIP. {selectedEmployeeDetail.nip}</div>
+                <div style={{ display: 'flex', gap: '6px', marginTop: '8px', flexWrap: 'wrap' }}>
+                  <span className={selectedEmployeeDetail.statusAsn === 'PNS' ? 'badge badge-pns' : 'badge badge-pppk'} style={{ fontSize: '0.7rem' }}>
                     {selectedEmployeeDetail.statusAsn} ({selectedEmployeeDetail.golongan})
                   </span>
-                  <span className="badge badge-sky">{selectedEmployeeDetail.gender}</span>
+                  <span className="badge badge-sky" style={{ fontSize: '0.7rem' }}>{selectedEmployeeDetail.gender}</span>
                 </div>
               </div>
 
-              <div className="responsive-grid-2col" style={{ background: 'rgba(15, 23, 42, 0.6)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
+              <div className="responsive-grid-2col" style={{ background: 'rgba(15, 23, 42, 0.6)', padding: '14px', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
                 <div>
-                  <span style={{ fontSize: '0.75rem', color: '#94a3b8', display: 'block' }}>Jabatan Saat Ini</span>
-                  <strong style={{ fontSize: '0.9rem', color: '#f8fafc' }}>{selectedEmployeeDetail.jabatan}</strong>
+                  <span style={{ fontSize: '0.725rem', color: '#94a3b8', display: 'block' }}>Jabatan Saat Ini</span>
+                  <strong style={{ fontSize: '0.85rem', color: '#f8fafc' }}>{selectedEmployeeDetail.jabatan}</strong>
                 </div>
                 <div>
-                  <span style={{ fontSize: '0.75rem', color: '#94a3b8', display: 'block' }}>TMT Pangkat/Jabatan</span>
-                  <strong style={{ fontSize: '0.9rem', color: '#f8fafc' }}>{selectedEmployeeDetail.tmtPangkat || '-'}</strong>
+                  <span style={{ fontSize: '0.725rem', color: '#94a3b8', display: 'block' }}>TMT Pangkat/Jabatan</span>
+                  <strong style={{ fontSize: '0.85rem', color: '#f8fafc' }}>{selectedEmployeeDetail.tmtPangkat || '-'}</strong>
                 </div>
                 <div>
-                  <span style={{ fontSize: '0.75rem', color: '#94a3b8', display: 'block' }}>OPD / Instansi</span>
-                  <strong style={{ fontSize: '0.85rem', color: '#cbd5e1' }}>{selectedEmployeeDetail.opd}</strong>
+                  <span style={{ fontSize: '0.725rem', color: '#94a3b8', display: 'block' }}>OPD / Instansi</span>
+                  <strong style={{ fontSize: '0.8rem', color: '#cbd5e1' }}>{selectedEmployeeDetail.opd}</strong>
                 </div>
                 <div>
-                  <span style={{ fontSize: '0.75rem', color: '#94a3b8', display: 'block' }}>Unit Kerja</span>
-                  <strong style={{ fontSize: '0.85rem', color: '#cbd5e1' }}>{selectedEmployeeDetail.unitKerja}</strong>
+                  <span style={{ fontSize: '0.725rem', color: '#94a3b8', display: 'block' }}>Unit Kerja</span>
+                  <strong style={{ fontSize: '0.8rem', color: '#cbd5e1' }}>{selectedEmployeeDetail.unitKerja}</strong>
                 </div>
                 <div>
-                  <span style={{ fontSize: '0.75rem', color: '#94a3b8', display: 'block' }}>Pendidikan Terakhir</span>
-                  <strong style={{ fontSize: '0.85rem', color: '#cbd5e1' }}>{selectedEmployeeDetail.pendTingkat} {selectedEmployeeDetail.pendJurusan}</strong>
+                  <span style={{ fontSize: '0.725rem', color: '#94a3b8', display: 'block' }}>Pendidikan Terakhir</span>
+                  <strong style={{ fontSize: '0.8rem', color: '#cbd5e1' }}>{selectedEmployeeDetail.pendTingkat} {selectedEmployeeDetail.pendJurusan}</strong>
                 </div>
                 <div>
-                  <span style={{ fontSize: '0.75rem', color: '#94a3b8', display: 'block' }}>Tanggal Lahir (Parsed NIP)</span>
-                  <strong style={{ fontSize: '0.85rem', color: '#cbd5e1' }}>{selectedEmployeeDetail.birthInfo ? selectedEmployeeDetail.birthInfo.formatted : '-'}</strong>
+                  <span style={{ fontSize: '0.725rem', color: '#94a3b8', display: 'block' }}>Tanggal Lahir (Parsed NIP)</span>
+                  <strong style={{ fontSize: '0.8rem', color: '#cbd5e1' }}>{selectedEmployeeDetail.birthInfo ? selectedEmployeeDetail.birthInfo.formatted : '-'}</strong>
                 </div>
               </div>
 
               {/* Proyeksi Summary Box */}
-              <div className="responsive-grid-2col" style={{ background: 'rgba(56, 189, 248, 0.08)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(56, 189, 248, 0.2)' }}>
+              <div className="responsive-grid-2col" style={{ background: 'rgba(56, 189, 248, 0.08)', padding: '14px', borderRadius: '12px', border: '1px solid rgba(56, 189, 248, 0.2)' }}>
                 <div>
-                  <span style={{ fontSize: '0.75rem', color: '#38bdf8', display: 'block', fontWeight: 600 }}>PROYEKSI PENSIUN (BUP)</span>
-                  <strong style={{ fontSize: '1.1rem', color: '#fbbf24' }}>Tahun {selectedEmployeeDetail.retirementYear}</strong>
-                  <span style={{ fontSize: '0.75rem', color: '#94a3b8', display: 'block' }}>BUP {selectedEmployeeDetail.bupYears} Tahun</span>
+                  <span style={{ fontSize: '0.7rem', color: '#38bdf8', display: 'block', fontWeight: 600 }}>PROYEKSI PENSIUN (BUP)</span>
+                  <strong style={{ fontSize: '1rem', color: '#fbbf24' }}>Tahun {selectedEmployeeDetail.retirementYear}</strong>
+                  <span style={{ fontSize: '0.7rem', color: '#94a3b8', display: 'block' }}>BUP {selectedEmployeeDetail.bupYears} Tahun</span>
                 </div>
                 <div>
-                  <span style={{ fontSize: '0.75rem', color: '#38bdf8', display: 'block', fontWeight: 600 }}>PROYEKSI NAIK JENJANG</span>
-                  <strong style={{ fontSize: '1.1rem', color: '#34d399' }}>Tahun {selectedEmployeeDetail.eligibleYear}</strong>
-                  <span style={{ fontSize: '0.75rem', color: '#94a3b8', display: 'block' }}>Target Pangkat: {selectedEmployeeDetail.targetPangkat}</span>
+                  <span style={{ fontSize: '0.7rem', color: '#38bdf8', display: 'block', fontWeight: 600 }}>PROYEKSI NAIK JENJANG</span>
+                  <strong style={{ fontSize: '1rem', color: '#34d399' }}>Tahun {selectedEmployeeDetail.eligibleYear}</strong>
+                  <span style={{ fontSize: '0.7rem', color: '#94a3b8', display: 'block' }}>Target Pangkat: {selectedEmployeeDetail.targetPangkat}</span>
                 </div>
               </div>
 
               {/* Contact Info */}
-              <div style={{ fontSize: '0.8rem', color: '#cbd5e1', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                {selectedEmployeeDetail.noHp && <div><Phone style={{ width: '14px', height: '14px', display: 'inline', marginRight: '8px', color: '#38bdf8' }} /> {selectedEmployeeDetail.noHp}</div>}
-                {selectedEmployeeDetail.email && <div><Mail style={{ width: '14px', height: '14px', display: 'inline', marginRight: '8px', color: '#38bdf8' }} /> {selectedEmployeeDetail.email}</div>}
-                {selectedEmployeeDetail.alamat && <div><MapPin style={{ width: '14px', height: '14px', display: 'inline', marginRight: '8px', color: '#38bdf8' }} /> {selectedEmployeeDetail.alamat}</div>}
+              <div style={{ fontSize: '0.785rem', color: '#cbd5e1', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                {selectedEmployeeDetail.noHp && <div><Phone style={{ width: '13px', height: '13px', display: 'inline', marginRight: '8px', color: '#38bdf8' }} /> {selectedEmployeeDetail.noHp}</div>}
+                {selectedEmployeeDetail.email && <div><Mail style={{ width: '13px', height: '13px', display: 'inline', marginRight: '8px', color: '#38bdf8' }} /> {selectedEmployeeDetail.email}</div>}
+                {selectedEmployeeDetail.alamat && <div><MapPin style={{ width: '13px', height: '13px', display: 'inline', marginRight: '8px', color: '#38bdf8' }} /> {selectedEmployeeDetail.alamat}</div>}
               </div>
             </div>
 
-            <div style={{ padding: '16px 24px', borderTop: '1px solid rgba(255, 255, 255, 0.08)', textAlign: 'right' }}>
-              <button onClick={() => setSelectedEmployeeDetail(null)} className="btn-primary">
+            <div style={{ padding: '12px 20px', borderTop: '1px solid rgba(255, 255, 255, 0.08)', textAlign: 'right' }}>
+              <button onClick={() => setSelectedEmployeeDetail(null)} className="btn-primary" style={{ padding: '7px 16px', fontSize: '0.8rem' }}>
                 Tutup Detail
               </button>
             </div>

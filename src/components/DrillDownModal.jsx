@@ -80,15 +80,15 @@ export default function DrillDownModal({ jabatanName, employees, onClose }) {
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         
         {/* Modal Header */}
-        <div style={{ padding: '20px 24px', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <Users style={{ color: '#38bdf8', width: '22px', height: '22px' }} />
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
-                Rincian Pegawai Jabatan: <span style={{ color: '#38bdf8' }}>{jabatanName}</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Users style={{ color: '#38bdf8', width: '20px', height: '20px', flexShrink: 0 }} />
+              <h2 style={{ fontSize: 'clamp(0.95rem, 3.5vw, 1.2rem)', fontWeight: 800, color: '#ffffff', margin: 0, lineHeight: 1.25 }}>
+                Rincian Pegawai: <span style={{ color: '#38bdf8' }}>{jabatanName}</span>
               </h2>
             </div>
-            <p style={{ fontSize: '0.8rem', color: '#94a3b8', margin: '4px 0 0 0' }}>
+            <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: '2px 0 0 0' }}>
               Drill-down data pegawai aktif menduduki posisi ini
             </p>
           </div>
@@ -96,36 +96,36 @@ export default function DrillDownModal({ jabatanName, employees, onClose }) {
           <button 
             onClick={onClose} 
             className="btn-secondary" 
-            style={{ padding: '8px', borderRadius: '50%', border: 'none' }}
+            style={{ padding: '6px', borderRadius: '50%', border: 'none', flexShrink: 0 }}
           >
-            <X style={{ width: '20px', height: '20px' }} />
+            <X style={{ width: '18px', height: '18px' }} />
           </button>
         </div>
 
         {/* Modal Sub-Header Stats & Controls */}
-        <div style={{ padding: '12px 16px', background: 'rgba(15, 23, 42, 0.6)', borderBottom: '1px solid rgba(255, 255, 255, 0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+        <div style={{ padding: '10px 16px', background: 'rgba(15, 23, 42, 0.7)', borderBottom: '1px solid rgba(255, 255, 255, 0.05)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
           
           {/* Quick Counter Badges */}
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
-            <span className="badge badge-sky" style={{ padding: '4px 10px' }}>
+          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
+            <span className="badge badge-sky" style={{ padding: '3px 8px', fontSize: '0.675rem' }}>
               Total: {stats.total} Pegawai
             </span>
-            <span className="badge badge-pns" style={{ padding: '4px 10px' }}>
+            <span className="badge badge-pns" style={{ padding: '3px 8px', fontSize: '0.675rem' }}>
               PNS: {stats.pns} | PPPK: {stats.pppk}
             </span>
-            <span style={{ fontSize: '0.75rem', color: '#cbd5e1', alignSelf: 'center' }}>
+            <span style={{ fontSize: '0.725rem', color: '#cbd5e1', alignSelf: 'center', marginLeft: 'auto' }}>
               L: <strong style={{ color: '#38bdf8' }}>{stats.male}</strong> | P: <strong style={{ color: '#ec4899' }}>{stats.female}</strong>
             </span>
           </div>
 
           {/* Search & Export */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', width: '100%' }}>
-            <div style={{ position: 'relative', flex: '1 1 160px', width: '100%' }}>
+            <div style={{ position: 'relative', flex: '1 1 180px', minWidth: '160px' }}>
               <Search style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#64748b', width: '14px', height: '14px' }} />
               <input
                 type="text"
                 className="search-input"
-                style={{ paddingLeft: '34px', fontSize: '0.8rem' }}
+                style={{ paddingLeft: '32px', padding: '7px 10px 7px 32px', fontSize: '0.785rem', borderRadius: '8px' }}
                 placeholder="Cari NIP/Nama/Unit..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -134,7 +134,7 @@ export default function DrillDownModal({ jabatanName, employees, onClose }) {
 
             <select 
               className="select-input" 
-              style={{ fontSize: '0.8rem', padding: '8px 10px', flex: '1 1 110px' }}
+              style={{ fontSize: '0.785rem', padding: '7px 10px', borderRadius: '8px', flex: '0 0 auto' }}
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
             >
@@ -143,8 +143,8 @@ export default function DrillDownModal({ jabatanName, employees, onClose }) {
               <option value="PPPK">Hanya PPPK</option>
             </select>
 
-            <button onClick={handleExportCSV} className="btn-primary" style={{ padding: '8px 12px', fontSize: '0.785rem', whiteSpace: 'nowrap' }}>
-              <Download style={{ width: '14px', height: '14px' }} /> Export CSV
+            <button onClick={handleExportCSV} className="btn-primary" style={{ padding: '7px 12px', fontSize: '0.75rem', whiteSpace: 'nowrap', borderRadius: '8px' }}>
+              <Download style={{ width: '13px', height: '13px' }} /> Export CSV
             </button>
           </div>
         </div>
