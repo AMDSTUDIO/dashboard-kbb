@@ -120,6 +120,15 @@ body {
 }
 
 /* Header & Nav */
+.main-navbar {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 1000 !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
 .navbar-brand {
   display: flex;
   align-items: center;

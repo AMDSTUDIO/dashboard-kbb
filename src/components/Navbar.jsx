@@ -193,22 +193,17 @@ export default function Navbar({
               alignItems: 'center', 
               width: '100%'
             }}>
-              {/* Left Logo + Compact Title */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              {/* Left: Logo Only on Mobile */}
+              <div style={{ display: 'flex', alignItems: 'center' }}>
                 <div style={{ 
-                  padding: '3px 6px', 
-                  borderRadius: '6px', 
+                  padding: '3px 8px', 
+                  borderRadius: '8px', 
                   background: '#ffffff', 
                   display: 'flex', 
                   alignItems: 'center',
-                  boxShadow: '0 2px 6px rgba(0, 0, 0, 0.3)'
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)'
                 }}>
-                  <img src="/logo-bkpsdm.png" alt="BKPSDM" style={{ height: '22px', width: 'auto' }} />
-                </div>
-                <div>
-                  <h1 style={{ fontSize: '0.95rem', fontWeight: 800, color: '#ffffff', margin: 0, lineHeight: 1.1 }}>
-                    DASHBOARD <span style={{ color: '#38bdf8' }}>KBB</span>
-                  </h1>
+                  <img src="/logo-bkpsdm.png" alt="BKPSDM KBB" style={{ height: '24px', width: 'auto', objectFit: 'contain' }} />
                 </div>
               </div>
 
