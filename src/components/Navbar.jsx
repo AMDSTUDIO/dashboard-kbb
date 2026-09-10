@@ -60,7 +60,7 @@ export default function Navbar({
           }}>
             
             {/* Brand & Emblem BKPSDM (Left) */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, flex: '1 1 auto', maxWidth: '100%' }}>
               <div style={{ 
                 padding: '3px 6px', 
                 borderRadius: '8px', 
@@ -75,16 +75,14 @@ export default function Navbar({
                 <img 
                   src="/logo-bkpsdm.png" 
                   alt="Logo BKPSDM KBB" 
-                  style={{ height: '30px', width: 'auto', objectFit: 'contain' }} 
+                  style={{ height: '28px', width: 'auto', objectFit: 'contain' }} 
                 />
               </div>
-              <div style={{ minWidth: 0 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <h1 style={{ fontSize: 'clamp(0.85rem, 2.5vw, 1.15rem)', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.02em', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    DASHBOARD <span style={{ color: '#38bdf8' }}>EKSEKUTIF</span>
-                  </h1>
-                </div>
-                <p style={{ fontSize: '0.65rem', color: '#94a3b8', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <h1 style={{ fontSize: 'clamp(0.8rem, 3.5vw, 1.15rem)', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.02em', margin: 0, lineHeight: 1.25, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  DASHBOARD <span style={{ color: '#38bdf8' }}>EKSEKUTIF</span>
+                </h1>
+                <p style={{ fontSize: '0.625rem', color: '#94a3b8', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   BKPSDM Kab. Bandung Barat
                 </p>
               </div>
