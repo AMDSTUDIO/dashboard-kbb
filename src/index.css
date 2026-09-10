@@ -605,14 +605,19 @@ body {
   }
 
   .modal-overlay {
-    padding: 8px;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .modal-content {
-    max-width: 100%;
-    width: 98%;
-    max-height: 94vh;
+    max-width: 600px;
+    width: 96vw;
+    max-height: 88vh;
+    height: auto;
     border-radius: var(--radius-md);
+    margin: auto;
   }
 
   .custom-table th, 
@@ -669,15 +674,20 @@ body {
   }
 
   .modal-overlay {
-    padding: 0;
+    padding: 12px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
   }
 
   .modal-content {
-    width: 100%;
-    height: 100vh;
-    max-height: 100vh;
-    border-radius: 0;
-    border: none;
+    width: 100% !important;
+    max-width: 96vw !important;
+    max-height: 88vh !important;
+    height: auto !important;
+    border-radius: 16px !important;
+    border: 1px solid rgba(56, 189, 248, 0.35) !important;
+    margin: auto !important;
   }
 
   .search-input, .select-input {
