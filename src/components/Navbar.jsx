@@ -311,6 +311,7 @@ export default function Navbar({
                   employees={employees} 
                   onSelectEmployee={onSelectEmployee} 
                   onOpenMasterSearch={onOpenMasterSearch} 
+                  placeholder="Cari Nama / NIP..."
                 />
               </div>
             </div>

@@ -523,6 +523,16 @@ body {
 }
 
 @media (max-width: 768px) {
+  .main-navbar .navbar-container {
+    padding: 6px 10px !important;
+  }
+
+  .spotlight-search-input {
+    padding: 8px 12px 8px 36px !important;
+    font-size: 0.775rem !important;
+    border-radius: 10px !important;
+  }
+
   .desktop-only {
     display: none !important;
   }
@@ -542,7 +552,7 @@ body {
   .nav-controls-wrapper {
     flex-direction: column !important;
     align-items: stretch !important;
-    gap: 8px !important;
+    gap: 6px !important;
   }
 
   .quick-search-header-container {
@@ -555,7 +565,7 @@ body {
     width: 100% !important;
     overflow-x: auto !important;
     white-space: nowrap !important;
-    padding-bottom: 6px !important;
+    padding-bottom: 4px !important;
   }
 
   .main-content {

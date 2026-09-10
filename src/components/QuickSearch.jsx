@@ -1,7 +1,12 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Search, X, ArrowRight, CornerDownLeft } from 'lucide-react';
 
-export default function QuickSearch({ employees = [], onSelectEmployee, onOpenMasterSearch }) {
+export default function QuickSearch({ 
+  employees = [], 
+  onSelectEmployee, 
+  onOpenMasterSearch, 
+  placeholder = "Pencarian Cepat Pegawai (Nama, NIP, Jabatan, OPD)..." 
+}) {
   const [query, setQuery] = useState('');
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef(null);
@@ -89,15 +94,15 @@ export default function QuickSearch({ employees = [], onSelectEmployee, onOpenMa
   };
 
   return (
-    <div ref={containerRef} style={{ position: 'relative', width: '100%', maxWidth: '720px', margin: '0 auto' }}>
+    <div ref={containerRef} className="quick-search-container" style={{ position: 'relative', width: '100%', maxWidth: '720px', margin: '0 auto' }}>
       
       {/* Search Input Box - Spotlight Hero Design */}
       <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
         <Search style={{ 
           position: 'absolute', 
-          left: '16px', 
-          width: '18px', 
-          height: '18px', 
+          left: '14px', 
+          width: '16px', 
+          height: '16px', 
           color: '#38bdf8', 
           pointerEvents: 'none' 
         }} />
@@ -112,21 +117,22 @@ export default function QuickSearch({ employees = [], onSelectEmployee, onOpenMa
           }}
           onFocus={() => setIsOpen(true)}
           onKeyDown={handleKeyDownInput}
-          placeholder="Pencarian Cepat Pegawai (Nama, NIP, Jabatan, OPD)..."
+          placeholder={placeholder}
+          className="spotlight-search-input"
           style={{
             width: '100%',
-            padding: '11px 42px 11px 46px',
+            padding: '9px 38px 9px 40px',
             background: 'rgba(15, 23, 42, 0.9)',
-            border: isOpen ? '1px solid #38bdf8' : '1px solid rgba(56, 189, 248, 0.4)',
-            borderRadius: '14px',
+            border: isOpen ? '1px solid #38bdf8' : '1px solid rgba(56, 189, 248, 0.35)',
+            borderRadius: '12px',
             color: '#ffffff',
-            fontSize: '0.875rem',
+            fontSize: '0.825rem',
             fontWeight: 500,
             outline: 'none',
             transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
             boxShadow: isOpen 
-              ? '0 0 25px rgba(56, 189, 248, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.1)' 
-              : '0 4px 16px rgba(0, 0, 0, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.05)'
+              ? '0 0 20px rgba(56, 189, 248, 0.35), inset 0 1px 2px rgba(255, 255, 255, 0.1)' 
+              : '0 4px 14px rgba(0, 0, 0, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.05)'
           }}
         />
 
