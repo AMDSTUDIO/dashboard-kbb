@@ -96,7 +96,7 @@ export default function ProyeksiNaikJenjang({ employees, onSelectEmployee }) {
 
       {/* Controls Bar */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
-        <div style={{ position: 'relative', width: '280px' }}>
+        <div style={{ position: 'relative', flex: '1 1 240px', width: '100%' }}>
           <Search style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#64748b', width: '16px', height: '16px' }} />
           <input
             type="text"
@@ -107,8 +107,8 @@ export default function ProyeksiNaikJenjang({ employees, onSelectEmployee }) {
           />
         </div>
 
-        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-          <select className="select-input" value={targetFilter} onChange={(e) => setTargetFilter(e.target.value)}>
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', flex: '1 1 auto', width: '100%' }}>
+          <select className="select-input" value={targetFilter} onChange={(e) => setTargetFilter(e.target.value)} style={{ flex: '1 1 160px' }}>
             <option value="ALL">Semua Target Pangkat</option>
             <option value="2/c">Target 2/c (Pemula)</option>
             <option value="2/d">Target 2/d (Terampil)</option>
@@ -116,7 +116,7 @@ export default function ProyeksiNaikJenjang({ employees, onSelectEmployee }) {
             <option value="3/d">Target 3/d (Penyelia & Ahli Muda)</option>
           </select>
 
-          <select className="select-input" value={yearFilter} onChange={(e) => setYearFilter(e.target.value)}>
+          <select className="select-input" value={yearFilter} onChange={(e) => setYearFilter(e.target.value)} style={{ flex: '1 1 180px' }}>
             <option value="ELIGIBLE_NOW">Sudah Eligible (TMT &le; {currentYear-4})</option>
             <option value="NEXT_YEAR">Eligible Tahun Depan ({currentYear+1})</option>
             <option value="ALL">Semua Tahun</option>

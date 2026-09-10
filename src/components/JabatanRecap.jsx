@@ -37,9 +37,9 @@ export default function JabatanRecap({ jabatanList, onSelectJabatan }) {
         </div>
 
         {/* Controls */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', width: '100%' }}>
           {/* Search Box */}
-          <div style={{ position: 'relative', width: '260px' }}>
+          <div style={{ position: 'relative', flex: '1 1 200px', width: '100%' }}>
             <Search style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#64748b', width: '16px', height: '16px' }} />
             <input
               type="text"
@@ -51,12 +51,13 @@ export default function JabatanRecap({ jabatanList, onSelectJabatan }) {
           </div>
 
           {/* Level Filter Dropdown */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Filter style={{ color: '#94a3b8', width: '16px', height: '16px' }} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: '1 1 180px', width: '100%' }}>
+            <Filter style={{ color: '#94a3b8', width: '16px', height: '16px', flexShrink: 0 }} />
             <select
               className="select-input"
               value={levelFilter}
               onChange={(e) => setLevelFilter(e.target.value)}
+              style={{ width: '100%' }}
             >
               <option value="ALL">Semua Jenjang</option>
               <option value="MADYA">Ahli Madya (BUP 60)</option>

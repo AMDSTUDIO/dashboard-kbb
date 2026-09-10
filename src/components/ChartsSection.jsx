@@ -199,7 +199,7 @@ export default function ChartsSection({ stats }) {
   };
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '20px', marginBottom: '24px' }}>
+    <div className="charts-grid">
       
       {/* Chart 1: Donut Status & Gender */}
       <div className="glass-card" style={{ padding: '20px' }}>
@@ -228,7 +228,7 @@ export default function ChartsSection({ stats }) {
       </div>
 
       {/* Chart 3: Timeline Proyeksi Line Chart */}
-      <div className="glass-card" style={{ padding: '20px', gridColumn: '1 / -1' }}>
+      <div className="glass-card charts-grid-full" style={{ padding: '20px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
           <TrendingUp style={{ color: '#f59e0b', width: '20px', height: '20px' }} />
           <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#ffffff', margin: 0 }}>

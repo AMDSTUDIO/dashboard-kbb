@@ -103,24 +103,24 @@ export default function DrillDownModal({ jabatanName, employees, onClose }) {
         </div>
 
         {/* Modal Sub-Header Stats & Controls */}
-        <div style={{ padding: '16px 24px', background: 'rgba(15, 23, 42, 0.6)', borderBottom: '1px solid rgba(255, 255, 255, 0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+        <div style={{ padding: '12px 16px', background: 'rgba(15, 23, 42, 0.6)', borderBottom: '1px solid rgba(255, 255, 255, 0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
           
           {/* Quick Counter Badges */}
-          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-            <span className="badge badge-sky" style={{ padding: '6px 12px' }}>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+            <span className="badge badge-sky" style={{ padding: '4px 10px' }}>
               Total: {stats.total} Pegawai
             </span>
-            <span className="badge badge-pns" style={{ padding: '6px 12px' }}>
+            <span className="badge badge-pns" style={{ padding: '4px 10px' }}>
               PNS: {stats.pns} | PPPK: {stats.pppk}
             </span>
-            <span style={{ fontSize: '0.8rem', color: '#cbd5e1', alignSelf: 'center', marginLeft: '6px' }}>
-              Laki-laki: <strong style={{ color: '#38bdf8' }}>{stats.male}</strong> | Perempuan: <strong style={{ color: '#ec4899' }}>{stats.female}</strong>
+            <span style={{ fontSize: '0.75rem', color: '#cbd5e1', alignSelf: 'center' }}>
+              L: <strong style={{ color: '#38bdf8' }}>{stats.male}</strong> | P: <strong style={{ color: '#ec4899' }}>{stats.female}</strong>
             </span>
           </div>
 
           {/* Search & Export */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div style={{ position: 'relative', width: '220px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', width: '100%' }}>
+            <div style={{ position: 'relative', flex: '1 1 160px', width: '100%' }}>
               <Search style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#64748b', width: '14px', height: '14px' }} />
               <input
                 type="text"
@@ -134,7 +134,7 @@ export default function DrillDownModal({ jabatanName, employees, onClose }) {
 
             <select 
               className="select-input" 
-              style={{ fontSize: '0.8rem', padding: '8px 12px' }}
+              style={{ fontSize: '0.8rem', padding: '8px 10px', flex: '1 1 110px' }}
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
             >
@@ -143,7 +143,7 @@ export default function DrillDownModal({ jabatanName, employees, onClose }) {
               <option value="PPPK">Hanya PPPK</option>
             </select>
 
-            <button onClick={handleExportCSV} className="btn-primary" style={{ padding: '8px 14px', fontSize: '0.8rem' }}>
+            <button onClick={handleExportCSV} className="btn-primary" style={{ padding: '8px 12px', fontSize: '0.785rem', whiteSpace: 'nowrap' }}>
               <Download style={{ width: '14px', height: '14px' }} /> Export CSV
             </button>
           </div>

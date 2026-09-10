@@ -7,10 +7,14 @@ import ProyeksiPensiun from './components/ProyeksiPensiun';
 import ProyeksiNaikJenjang from './components/ProyeksiNaikJenjang';
 import EmployeeTable from './components/EmployeeTable';
 import DrillDownModal from './components/DrillDownModal';
+import LoginPage from './components/LoginPage';
+import AdminUserModal from './components/AdminUserModal';
 import { fetchLiveKepegawaianData } from './services/sheetsService';
+import { authService } from './services/authService';
 import { Loader2, AlertCircle, Sparkles, X, Phone, Mail, MapPin, Building, ShieldCheck } from 'lucide-react';
 
 export default function App() {
+  const [currentUser, setCurrentUser] = useState(() => authService.getCurrentUser());
   const [activeTab, setActiveTab] = useState('overview');
   const [dataset, setDataset] = useState({ employees: [], stats: null });
   const [isLoading, setIsLoading] = useState(true);
@@ -24,6 +28,9 @@ export default function App() {
 
   // Single Employee Detail modal state
   const [selectedEmployeeDetail, setSelectedEmployeeDetail] = useState(null);
+
+  // Admin User Creation Modal state
+  const [showAdminUserModal, setShowAdminUserModal] = useState(false);
 
   const loadData = async () => {
     setIsSyncing(true);
@@ -43,8 +50,19 @@ export default function App() {
   };
 
   useEffect(() => {
-    loadData();
-  }, []);
+    if (currentUser) {
+      loadData();
+    }
+  }, [currentUser]);
+
+  const handleLogout = () => {
+    authService.logout();
+    setCurrentUser(null);
+  };
+
+  if (!currentUser) {
+    return <LoginPage onLoginSuccess={(user) => setCurrentUser(user)} />;
+  }
 
   return (
     <div className="app-container">
@@ -57,7 +75,18 @@ export default function App() {
         lastSynced={lastSynced}
         source={dataSource}
         totalRecords={dataset.stats?.totalPegawai || 0}
+        currentUser={currentUser}
+        onLogout={handleLogout}
+        employees={dataset.employees}
+        onSelectEmployee={(emp) => setSelectedEmployeeDetail(emp)}
+        onOpenMasterSearch={() => setActiveTab('master')}
+        onOpenAdminUserModal={() => setShowAdminUserModal(true)}
       />
+
+      {/* Admin User Management Modal */}
+      {showAdminUserModal && (
+        <AdminUserModal onClose={() => setShowAdminUserModal(false)} />
+      )}
 
       {/* Main Workspace Content */}
       <main className="main-content">
@@ -171,7 +200,7 @@ export default function App() {
                 </div>
               </div>
 
-              <div style={{ background: 'rgba(15, 23, 42, 0.6)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.06)', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+              <div className="responsive-grid-2col" style={{ background: 'rgba(15, 23, 42, 0.6)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
                 <div>
                   <span style={{ fontSize: '0.75rem', color: '#94a3b8', display: 'block' }}>Jabatan Saat Ini</span>
                   <strong style={{ fontSize: '0.9rem', color: '#f8fafc' }}>{selectedEmployeeDetail.jabatan}</strong>
@@ -199,7 +228,7 @@ export default function App() {
               </div>
 
               {/* Proyeksi Summary Box */}
-              <div style={{ background: 'rgba(56, 189, 248, 0.08)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(56, 189, 248, 0.2)', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+              <div className="responsive-grid-2col" style={{ background: 'rgba(56, 189, 248, 0.08)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(56, 189, 248, 0.2)' }}>
                 <div>
                   <span style={{ fontSize: '0.75rem', color: '#38bdf8', display: 'block', fontWeight: 600 }}>PROYEKSI PENSIUN (BUP)</span>
                   <strong style={{ fontSize: '1.1rem', color: '#fbbf24' }}>Tahun {selectedEmployeeDetail.retirementYear}</strong>
@@ -230,8 +259,11 @@ export default function App() {
       )}
 
       {/* Footer */}
-      <footer style={{ borderTop: '1px solid rgba(255,255,255,0.05)', padding: '24px', textAlign: 'center', color: '#64748b', fontSize: '0.8rem', marginTop: 'auto' }}>
+      <footer style={{ borderTop: '1px solid rgba(255,255,255,0.05)', padding: '20px 24px', textAlign: 'center', color: '#64748b', fontSize: '0.8rem', marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'center' }}>
         <div>Dashboard & Infografik Kepegawaian Eksekutif KBB &copy; 2026. Live Sync via Google Sheets API.</div>
+        <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+          Developed by <a href="https://creativedivisions.my.id" target="_blank" rel="noopener noreferrer" style={{ color: '#38bdf8', textDecoration: 'none', fontWeight: 700 }}>creativedivisions.my.id</a>
+        </div>
       </footer>
     </div>
   );

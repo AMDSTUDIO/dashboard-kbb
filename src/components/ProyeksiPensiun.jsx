@@ -89,7 +89,7 @@ export default function ProyeksiPensiun({ employees, onSelectEmployee }) {
 
       {/* Filter Bar */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
-        <div style={{ position: 'relative', width: '280px' }}>
+        <div style={{ position: 'relative', flex: '1 1 240px', width: '100%' }}>
           <Search style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#64748b', width: '16px', height: '16px' }} />
           <input
             type="text"
@@ -100,17 +100,17 @@ export default function ProyeksiPensiun({ employees, onSelectEmployee }) {
           />
         </div>
 
-        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Filter style={{ color: '#94a3b8', width: '16px', height: '16px' }} />
-            <select className="select-input" value={bupFilter} onChange={(e) => setBupFilter(e.target.value)}>
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', flex: '1 1 auto', width: '100%' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: '1 1 160px' }}>
+            <Filter style={{ color: '#94a3b8', width: '16px', height: '16px', flexShrink: 0 }} />
+            <select className="select-input" value={bupFilter} onChange={(e) => setBupFilter(e.target.value)} style={{ width: '100%' }}>
               <option value="ALL">Semua BUP (60 & 58)</option>
               <option value="BUP60">BUP 60 Tahun (Ahli Madya)</option>
               <option value="BUP58">BUP 58 Tahun (Lainnya)</option>
             </select>
           </div>
 
-          <select className="select-input" value={yearFilter} onChange={(e) => setYearFilter(e.target.value)}>
+          <select className="select-input" value={yearFilter} onChange={(e) => setYearFilter(e.target.value)} style={{ flex: '1 1 160px' }}>
             <option value="ALL">Semua Tahun Pensiun</option>
             <option value="THIS_YEAR">Pensiun Tahun Ini ({currentYear})</option>
             <option value="NEXT_3_YEARS">Pensiun 3 Thn Ke Depan ({currentYear}-{currentYear+3})</option>

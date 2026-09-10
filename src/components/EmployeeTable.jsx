@@ -119,7 +119,7 @@ export default function EmployeeTable({ employees, onSelectEmployee }) {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '20px' }}>
         
         {/* Main Instant Search Input */}
-        <div style={{ position: 'relative', flex: 1, minWidth: '280px' }}>
+        <div style={{ position: 'relative', flex: '1 1 280px', width: '100%' }}>
           <Search style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#38bdf8', width: '18px', height: '18px' }} />
           <input
             type="text"
@@ -132,12 +132,12 @@ export default function EmployeeTable({ employees, onSelectEmployee }) {
         </div>
 
         {/* Dropdown Filters */}
-        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', flex: '1 1 auto', width: '100%', maxWidth: '100%' }}>
           <select 
             className="select-input" 
             value={opdFilter} 
             onChange={(e) => handleFilterChange(setOpdFilter, e.target.value)}
-            style={{ maxWidth: '200px' }}
+            style={{ flex: '1 1 140px', minWidth: '130px' }}
           >
             <option value="ALL">Semua OPD ({uniqueOpds.length})</option>
             {uniqueOpds.map((opd, i) => (
@@ -149,6 +149,7 @@ export default function EmployeeTable({ employees, onSelectEmployee }) {
             className="select-input" 
             value={statusFilter} 
             onChange={(e) => handleFilterChange(setStatusFilter, e.target.value)}
+            style={{ flex: '1 1 110px' }}
           >
             <option value="ALL">Semua Status</option>
             <option value="PNS">PNS</option>
@@ -159,6 +160,7 @@ export default function EmployeeTable({ employees, onSelectEmployee }) {
             className="select-input" 
             value={genderFilter} 
             onChange={(e) => handleFilterChange(setGenderFilter, e.target.value)}
+            style={{ flex: '1 1 110px' }}
           >
             <option value="ALL">Semua Gender</option>
             <option value="Laki-laki">Laki-laki (L)</option>
@@ -172,6 +174,7 @@ export default function EmployeeTable({ employees, onSelectEmployee }) {
               setPageSize(Number(e.target.value));
               setCurrentPage(1);
             }}
+            style={{ flex: '1 1 90px' }}
           >
             <option value={25}>25 Baris</option>
             <option value={50}>50 Baris</option>
