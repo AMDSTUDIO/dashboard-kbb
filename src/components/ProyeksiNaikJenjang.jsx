@@ -154,40 +154,40 @@ export default function ProyeksiNaikJenjang({ employees, onSelectEmployee }) {
             ) : (
               promotionEmployees.slice(0, 100).map((emp, idx) => (
                 <tr key={idx} onClick={() => onSelectEmployee && onSelectEmployee(emp)} style={{ cursor: 'pointer' }}>
-                  <td style={{ color: '#64748b' }}>{idx + 1}</td>
+                  <td style={{ color: '#64748b', fontSize: '0.785rem' }}>{idx + 1}</td>
                   <td>
-                    <strong style={{ color: '#f8fafc', display: 'block' }}>{emp.nama}</strong>
-                    <span style={{ fontSize: '0.75rem', color: '#38bdf8', fontFamily: 'monospace' }}>{emp.nip}</span>
+                    <strong style={{ color: '#f8fafc', display: 'block', fontSize: '0.825rem' }}>{emp.nama}</strong>
+                    <span style={{ fontSize: '0.725rem', color: '#38bdf8', fontFamily: 'monospace' }}>{emp.nip}</span>
                   </td>
-                  <td>
+                  <td style={{ fontSize: '0.8rem' }}>
                     <span style={{ color: '#cbd5e1', fontWeight: 600 }}>{emp.jabatan}</span>
                   </td>
                   <td>
-                    <span className="badge badge-sky">{emp.golongan}</span>
+                    <span className="badge badge-sky" style={{ fontSize: '0.675rem' }}>{emp.golongan}</span>
                   </td>
-                  <td style={{ fontSize: '0.8rem', color: '#cbd5e1' }}>
+                  <td style={{ fontSize: '0.785rem', color: '#cbd5e1' }}>
                     {emp.tmtPangkat || '-'}
                   </td>
                   <td>
-                    <strong style={{ fontSize: '1rem', color: emp.eligibleYear <= currentYear ? '#fbbf24' : '#38bdf8' }}>
+                    <strong style={{ fontSize: '0.875rem', color: emp.eligibleYear <= currentYear ? '#fbbf24' : '#38bdf8' }}>
                       {emp.eligibleYear}
                     </strong>
                   </td>
                   <td>
-                    <span className="badge badge-warning" style={{ fontWeight: 800 }}>
+                    <span className="badge badge-warning" style={{ fontWeight: 800, fontSize: '0.675rem' }}>
                       {emp.targetPangkat}
                     </span>
                   </td>
                   <td>
                     {emp.eligibleYear <= currentYear ? (
-                      <span className="badge badge-warning">Eligible (Sudah 4+ Thn)</span>
+                      <span className="badge badge-warning" style={{ fontSize: '0.675rem' }}>Eligible (4+ Thn)</span>
                     ) : emp.eligibleYear === currentYear + 1 ? (
-                      <span className="badge badge-sky">Eligible Thn Depan</span>
+                      <span className="badge badge-sky" style={{ fontSize: '0.675rem' }}>Thn Depan</span>
                     ) : (
-                      <span className="badge badge-pns">Eligible Thn {emp.eligibleYear}</span>
+                      <span className="badge badge-pns" style={{ fontSize: '0.675rem' }}>Thn {emp.eligibleYear}</span>
                     )}
                   </td>
-                  <td style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
+                  <td style={{ fontSize: '0.785rem', color: '#94a3b8' }}>
                     {emp.opd}
                   </td>
                 </tr>

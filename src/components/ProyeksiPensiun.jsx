@@ -150,43 +150,43 @@ export default function ProyeksiPensiun({ employees, onSelectEmployee }) {
             ) : (
               retiringEmployees.slice(0, 100).map((emp, idx) => (
                 <tr key={idx} onClick={() => onSelectEmployee && onSelectEmployee(emp)} style={{ cursor: 'pointer' }}>
-                  <td style={{ color: '#64748b' }}>{idx + 1}</td>
+                  <td style={{ color: '#64748b', fontSize: '0.785rem' }}>{idx + 1}</td>
                   <td>
-                    <strong style={{ color: '#f8fafc', display: 'block' }}>{emp.nama}</strong>
-                    <span style={{ fontSize: '0.75rem', color: '#38bdf8', fontFamily: 'monospace' }}>{emp.nip}</span>
+                    <strong style={{ color: '#f8fafc', display: 'block', fontSize: '0.825rem' }}>{emp.nama}</strong>
+                    <span style={{ fontSize: '0.725rem', color: '#38bdf8', fontFamily: 'monospace' }}>{emp.nip}</span>
                   </td>
-                  <td>
+                  <td style={{ fontSize: '0.8rem' }}>
                     <span style={{ color: '#cbd5e1', fontWeight: 600 }}>{emp.jabatan}</span>
-                    <span style={{ display: 'block', fontSize: '0.75rem', color: '#94a3b8' }}>{emp.golongan}</span>
+                    <span style={{ display: 'block', fontSize: '0.7rem', color: '#94a3b8' }}>{emp.golongan}</span>
                   </td>
                   <td>
                     {emp.bupYears === 60 ? (
-                      <span className="badge badge-warning">60 THN</span>
+                      <span className="badge badge-warning" style={{ fontSize: '0.675rem' }}>60 THN</span>
                     ) : (
-                      <span className="badge badge-sky">58 THN</span>
+                      <span className="badge badge-sky" style={{ fontSize: '0.675rem' }}>58 THN</span>
                     )}
                   </td>
-                  <td style={{ fontSize: '0.8rem', color: '#cbd5e1' }}>
+                  <td style={{ fontSize: '0.785rem', color: '#cbd5e1' }}>
                     {emp.birthInfo ? emp.birthInfo.formatted : '-'}
                   </td>
-                  <td style={{ fontWeight: 700, color: '#f8fafc' }}>
+                  <td style={{ fontWeight: 700, color: '#f8fafc', fontSize: '0.8rem' }}>
                     {emp.age ? `${emp.age} thn` : '-'}
                   </td>
                   <td>
-                    <strong style={{ fontSize: '1rem', color: emp.retirementYear <= currentYear ? '#f87171' : '#fbbf24' }}>
+                    <strong style={{ fontSize: '0.875rem', color: emp.retirementYear <= currentYear ? '#f87171' : '#fbbf24' }}>
                       {emp.retirementYear}
                     </strong>
                   </td>
                   <td>
                     {emp.retirementYear <= currentYear ? (
-                      <span className="badge badge-danger">Memasuki Pensiun</span>
+                      <span className="badge badge-danger" style={{ fontSize: '0.675rem' }}>Memasuki Pensiun</span>
                     ) : emp.retirementYear <= currentYear + 3 ? (
-                      <span className="badge badge-warning">Pensiun &le; 3 Thn</span>
+                      <span className="badge badge-warning" style={{ fontSize: '0.675rem' }}>Pensiun &le; 3 Thn</span>
                     ) : (
-                      <span className="badge badge-sky">Aktif (&gt;3 Thn)</span>
+                      <span className="badge badge-sky" style={{ fontSize: '0.675rem' }}>Aktif (&gt;3 Thn)</span>
                     )}
                   </td>
-                  <td style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
+                  <td style={{ fontSize: '0.785rem', color: '#94a3b8' }}>
                     {emp.opd}
                   </td>
                 </tr>
