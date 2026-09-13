@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Search, Filter, Database, ChevronLeft, ChevronRight, Download, UserCheck, ShieldCheck } from 'lucide-react';
+import { Search, Filter, Database, ChevronLeft, ChevronRight, Download, UserCheck, ShieldCheck, Users } from 'lucide-react';
 import Papa from 'papaparse';
 import { MasterDataCharts } from './TabCharts';
 
@@ -186,6 +186,17 @@ export default function EmployeeTable({ employees, stats, onSelectEmployee }) {
             <option value={100}>100 Baris</option>
           </select>
         </div>
+      </div>
+
+      {/* Total Result Counter Indicator Banner */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '0 0 14px 0', padding: '10px 14px', background: 'rgba(56, 189, 248, 0.08)', borderRadius: '8px', border: '1px solid rgba(56, 189, 248, 0.2)' }}>
+        <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Users style={{ width: '16px', height: '16px', color: '#38bdf8' }} />
+          <span>Hasil Filter Master Data: <strong style={{ color: '#38bdf8', fontSize: '1.05rem' }}>{filteredEmployees.length.toLocaleString('id-ID')}</strong> Pegawai</span>
+        </div>
+        <span className="badge badge-sky" style={{ fontSize: '0.725rem' }}>
+          Total: {filteredEmployees.length.toLocaleString('id-ID')} Data
+        </span>
       </div>
 
       {/* Table Result */}

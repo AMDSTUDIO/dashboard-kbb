@@ -74,12 +74,15 @@ export default function JabatanRecap({ jabatanList, stats, onSelectJabatan }) {
         </div>
       </div>
 
-      {/* Info Badge */}
-      <div style={{ background: 'rgba(56, 189, 248, 0.08)', border: '1px dashed rgba(56, 189, 248, 0.3)', borderRadius: '10px', padding: '10px 16px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-        <Sparkles style={{ color: '#38bdf8', width: '18px', height: '18px', flexShrink: 0 }} />
-        <div style={{ fontSize: '0.8rem', color: '#cbd5e1' }}>
-          Menampilkan <strong>{filteredJabatan.length}</strong> jenis jabatan fungsional. Silakan klik baris mana saja untuk membuka popup rincian pegawai.
+      {/* Total Result Counter Indicator Banner */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '0 0 14px 0', padding: '10px 14px', background: 'rgba(56, 189, 248, 0.08)', borderRadius: '8px', border: '1px solid rgba(56, 189, 248, 0.2)' }}>
+        <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Sparkles style={{ color: '#38bdf8', width: '16px', height: '16px' }} />
+          <span>Hasil Filter Jabatan: <strong style={{ color: '#38bdf8', fontSize: '1.05rem' }}>{filteredJabatan.length.toLocaleString('id-ID')}</strong> Formasi Jabatan</span>
         </div>
+        <span className="badge badge-sky" style={{ fontSize: '0.725rem' }}>
+          Total: {filteredJabatan.length.toLocaleString('id-ID')} Formasi
+        </span>
       </div>
 
       {/* Table Content */}
