@@ -1,8 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import { Search, Filter, Database, ChevronLeft, ChevronRight, Download, UserCheck, ShieldCheck } from 'lucide-react';
 import Papa from 'papaparse';
+import { MasterDataCharts } from './TabCharts';
 
-export default function EmployeeTable({ employees, onSelectEmployee }) {
+export default function EmployeeTable({ employees, stats, onSelectEmployee }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [opdFilter, setOpdFilter] = useState('ALL');
   const [statusFilter, setStatusFilter] = useState('ALL');
@@ -94,7 +95,11 @@ export default function EmployeeTable({ employees, onSelectEmployee }) {
   };
 
   return (
-    <div className="glass-card" style={{ padding: '24px', marginBottom: '24px' }}>
+    <div>
+      {/* Thematic Charts for Tab Master Data */}
+      <MasterDataCharts stats={stats} />
+
+      <div className="glass-card" style={{ padding: '24px', marginBottom: '24px' }}>
       
       {/* Title Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', marginBottom: '20px' }}>
@@ -287,6 +292,7 @@ export default function EmployeeTable({ employees, onSelectEmployee }) {
         </div>
       </div>
 
+    </div>
     </div>
   );
 }

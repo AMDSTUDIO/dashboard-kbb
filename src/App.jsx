@@ -113,15 +113,14 @@ export default function App() {
           </div>
         ) : (
           <>
-            {/* KPI Header Overview (Always visible) */}
-            <KpiOverview stats={dataset.stats} />
-
             {/* TAB 1: Ringkasan Eksekutif */}
             {activeTab === 'overview' && (
               <>
+                <KpiOverview stats={dataset.stats} />
                 <ChartsSection stats={dataset.stats} />
                 <JabatanRecap 
-                  jabatanList={dataset.stats?.jabatanList} 
+                  jabatanList={dataset.stats?.jabatanList}
+                  stats={dataset.stats}
                   onSelectJabatan={(jabName) => setDrillDownJabatan(jabName)}
                 />
               </>
@@ -130,7 +129,8 @@ export default function App() {
             {/* TAB 2: Rekap Jabatan Fungsional */}
             {activeTab === 'jabatan' && (
               <JabatanRecap 
-                jabatanList={dataset.stats?.jabatanList} 
+                jabatanList={dataset.stats?.jabatanList}
+                stats={dataset.stats}
                 onSelectJabatan={(jabName) => setDrillDownJabatan(jabName)}
               />
             )}
@@ -138,7 +138,8 @@ export default function App() {
             {/* TAB 3: Proyeksi Pensiun BUP */}
             {activeTab === 'pensiun' && (
               <ProyeksiPensiun 
-                employees={dataset.employees} 
+                employees={dataset.employees}
+                stats={dataset.stats}
                 onSelectEmployee={(emp) => setSelectedEmployeeDetail(emp)}
               />
             )}
@@ -146,7 +147,8 @@ export default function App() {
             {/* TAB 4: Proyeksi Naik Jenjang */}
             {activeTab === 'promotion' && (
               <ProyeksiNaikJenjang 
-                employees={dataset.employees} 
+                employees={dataset.employees}
+                stats={dataset.stats}
                 onSelectEmployee={(emp) => setSelectedEmployeeDetail(emp)}
               />
             )}
@@ -154,7 +156,8 @@ export default function App() {
             {/* TAB 5: Master Data Pegawai */}
             {activeTab === 'master' && (
               <EmployeeTable 
-                employees={dataset.employees} 
+                employees={dataset.employees}
+                stats={dataset.stats}
                 onSelectEmployee={(emp) => setSelectedEmployeeDetail(emp)}
               />
             )}

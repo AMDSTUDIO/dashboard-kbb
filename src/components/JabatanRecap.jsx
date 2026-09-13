@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { Search, ChevronRight, Filter, Users, Sparkles, Award } from 'lucide-react';
+import { JabatanCharts } from './TabCharts';
 
-export default function JabatanRecap({ jabatanList, onSelectJabatan }) {
+export default function JabatanRecap({ jabatanList, stats, onSelectJabatan }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [levelFilter, setLevelFilter] = useState('ALL'); // ALL, MADYA, PERTAMA, MUDA, TERAMPIL
 
@@ -21,7 +22,11 @@ export default function JabatanRecap({ jabatanList, onSelectJabatan }) {
   }, [jabatanList, searchQuery, levelFilter]);
 
   return (
-    <div className="glass-card" style={{ padding: '24px', marginBottom: '24px' }}>
+    <div>
+      {/* Thematic Charts for Tab JF */}
+      <JabatanCharts stats={stats} />
+
+      <div className="glass-card" style={{ padding: '24px', marginBottom: '24px' }}>
       {/* Header & Filter Bar */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', marginBottom: '20px' }}>
         <div>
@@ -151,6 +156,7 @@ export default function JabatanRecap({ jabatanList, onSelectJabatan }) {
           </tbody>
         </table>
       </div>
+    </div>
     </div>
   );
 }

@@ -282,6 +282,18 @@ function aggregateStats(employees) {
   const retirementYearMap = {};
   const promotionYearMap = {};
 
+  // Additional thematic aggregations
+  const jfJenjangMap = {
+    // Keterampilan
+    'Pemula': 0, 'Terampil': 0, 'Mahir': 0, 'Penyelia': 0,
+    // Keahlian
+    'Ahli Pertama': 0, 'Ahli Muda': 0, 'Ahli Madya': 0, 'Ahli Utama': 0
+  };
+  const targetRankMap = {};
+  const promotionStatusMap = { 'Sudah Eligible (TMT ≥ 4 Thn)': 0, 'Eligible Tahun Depan': 0, 'Belum Waktunya': 0 };
+  const pendidikanMap = {};
+  const golonganRumpunMap = { 'Golongan I': 0, 'Golongan II': 0, 'Golongan III': 0, 'Golongan IV': 0, 'PPPK': 0 };
+
   const currentYear = new Date().getFullYear();
 
   employees.forEach(emp => {
@@ -296,6 +308,57 @@ function aggregateStats(employees) {
     if (emp.isEligiblePromotion) totalEligiblePromotion++;
     if (emp.retirementYear && emp.retirementYear >= currentYear && emp.retirementYear <= currentYear + 3) {
       totalRetiringIn3Years++;
+    }
+
+    // Aggregate JF Jenjang
+    if (emp.jenjangJf && jfJenjangMap[emp.jenjangJf] !== undefined) {
+      jfJenjangMap[emp.jenjangJf]++;
+    }
+
+    // Aggregate Target Rank
+    if (emp.targetPangkat) {
+      const tgt = emp.targetPangkat.split(' ')[0]; // clean e.g. "III/b"
+      targetRankMap[tgt] = (targetRankMap[tgt] || 0) + 1;
+    }
+
+    // Aggregate Promotion Status
+    if (emp.eligibleYear) {
+      if (emp.eligibleYear <= currentYear) {
+        promotionStatusMap['Sudah Eligible (TMT ≥ 4 Thn)']++;
+      } else if (emp.eligibleYear === currentYear + 1) {
+        promotionStatusMap['Eligible Tahun Depan']++;
+      } else {
+        promotionStatusMap['Belum Waktunya']++;
+      }
+    } else {
+      promotionStatusMap['Belum Waktunya']++;
+    }
+
+    // Aggregate Pendidikan
+    let pend = (emp.pendTingkat || 'Lainnya').toUpperCase().trim();
+    if (pend.includes('S3') || pend.includes('DOKTOR')) pend = 'S3';
+    else if (pend.includes('S2') || pend.includes('MAGISTER')) pend = 'S2';
+    else if (pend.includes('S1') || pend.includes('SARJANA') || pend.includes('D4') || pend.includes('DIV')) pend = 'S1 / D-IV';
+    else if (pend.includes('D3') || pend.includes('D-III') || pend.includes('DIII')) pend = 'D-III';
+    else if (pend.includes('SMA') || pend.includes('SMK') || pend.includes('SLTA')) pend = 'SMA / SMK';
+    else if (pend.includes('SMP') || pend.includes('SLTP') || pend.includes('SD')) pend = 'SD / SMP';
+    else pend = 'Lainnya';
+    pendidikanMap[pend] = (pendidikanMap[pend] || 0) + 1;
+
+    // Aggregate Golongan Rumpun
+    const golStr = (emp.golongan || '').toUpperCase();
+    if (emp.statusAsn === 'PPPK' || golStr.includes('PPPK')) {
+      golonganRumpunMap['PPPK']++;
+    } else if (golStr.includes('IV/') || golStr.includes('4/')) {
+      golonganRumpunMap['Golongan IV']++;
+    } else if (golStr.includes('III/') || golStr.includes('3/')) {
+      golonganRumpunMap['Golongan III']++;
+    } else if (golStr.includes('II/') || golStr.includes('2/')) {
+      golonganRumpunMap['Golongan II']++;
+    } else if (golStr.includes('I/') || golStr.includes('1/')) {
+      golonganRumpunMap['Golongan I']++;
+    } else {
+      golonganRumpunMap['Golongan III']++;
     }
 
     // Aggregate Jabatan
@@ -354,7 +417,12 @@ function aggregateStats(employees) {
     jabatanList,
     opdList,
     retirementYearMap,
-    promotionYearMap
+    promotionYearMap,
+    jfJenjangMap,
+    targetRankMap,
+    promotionStatusMap,
+    pendidikanMap,
+    golonganRumpunMap
   };
 }
 
@@ -372,6 +440,11 @@ function getEmptyStats() {
     jabatanList: [],
     opdList: [],
     retirementYearMap: {},
-    promotionYearMap: {}
+    promotionYearMap: {},
+    jfJenjangMap: {},
+    targetRankMap: {},
+    promotionStatusMap: {},
+    pendidikanMap: {},
+    golonganRumpunMap: {}
   };
 }

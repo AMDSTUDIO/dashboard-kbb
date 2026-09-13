@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { CalendarX, Search, Filter, ShieldAlert, Sparkles, UserCheck } from 'lucide-react';
+import { PensiunCharts } from './TabCharts';
 
-export default function ProyeksiPensiun({ employees, onSelectEmployee }) {
+export default function ProyeksiPensiun({ employees, stats, onSelectEmployee }) {
   const currentYear = new Date().getFullYear();
   const [yearFilter, setYearFilter] = useState('ALL'); // ALL, THIS_YEAR, NEXT_3_YEARS, 2026, 2027, 2028, 2029, 2030
   const [bupFilter, setBupFilter] = useState('ALL'); // ALL, BUP60, BUP58
@@ -46,7 +47,11 @@ export default function ProyeksiPensiun({ employees, onSelectEmployee }) {
   const retiring3YearsCount = useMemo(() => employees ? employees.filter(e => e.retirementYear >= currentYear && e.retirementYear <= currentYear + 3).length : 0, [employees, currentYear]);
 
   return (
-    <div className="glass-card" style={{ padding: '24px', marginBottom: '24px' }}>
+    <div>
+      {/* Thematic Charts for Tab Pensiun */}
+      <PensiunCharts stats={stats} />
+
+      <div className="glass-card" style={{ padding: '24px', marginBottom: '24px' }}>
       
       {/* Title & Overview */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', marginBottom: '20px' }}>
@@ -201,6 +206,7 @@ export default function ProyeksiPensiun({ employees, onSelectEmployee }) {
         )}
       </div>
 
+    </div>
     </div>
   );
 }

@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { TrendingUp, Search, Filter, Sparkles, CheckCircle2, AlertCircle, ArrowUpRight, Award } from 'lucide-react';
+import { PromotionCharts } from './TabCharts';
 
-export default function ProyeksiNaikJenjang({ employees, onSelectEmployee }) {
+export default function ProyeksiNaikJenjang({ employees, stats, onSelectEmployee }) {
   const currentYear = new Date().getFullYear();
   const [yearFilter, setYearFilter] = useState('ELIGIBLE_NOW'); // ELIGIBLE_NOW, NEXT_YEAR, ALL, 2026...
   const [golonganFilter, setGolonganFilter] = useState('ALL'); // ALL, II/a s.d. IV/e
@@ -68,7 +69,11 @@ export default function ProyeksiNaikJenjang({ employees, onSelectEmployee }) {
   const naikJenjangCount = useMemo(() => promotionEmployees.filter(e => e.proyeksiType === 'Naik Jenjang').length, [promotionEmployees]);
 
   return (
-    <div className="glass-card" style={{ padding: '24px', marginBottom: '24px' }}>
+    <div>
+      {/* Thematic Charts for Tab Promotion */}
+      <PromotionCharts stats={stats} />
+
+      <div className="glass-card" style={{ padding: '24px', marginBottom: '24px' }}>
       
       {/* Title & Stats Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', marginBottom: '20px' }}>
@@ -317,6 +322,7 @@ export default function ProyeksiNaikJenjang({ employees, onSelectEmployee }) {
         )}
       </div>
 
+    </div>
     </div>
   );
 }
