@@ -307,12 +307,34 @@ body {
   to { opacity: 1; transform: scale(1) translateY(0); }
 }
 
-/* Tables */
+/* Tables & Freeze/Sticky Header */
 .custom-table-container {
   width: 100%;
+  max-height: clamp(380px, 60vh, 580px);
+  overflow-y: auto;
   overflow-x: auto;
   border-radius: var(--radius-sm);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  position: relative;
+  -webkit-overflow-scrolling: touch;
+}
+
+.custom-table-container::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-table-container::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.6);
+}
+
+.custom-table-container::-webkit-scrollbar-thumb {
+  background: rgba(56, 189, 248, 0.3);
+  border-radius: 4px;
+}
+
+.custom-table-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(56, 189, 248, 0.6);
 }
 
 .custom-table {
@@ -323,18 +345,25 @@ body {
   font-size: 0.875rem;
 }
 
+.custom-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
 .custom-table th {
-  background: #0f172a;
-  color: var(--text-muted);
+  background-color: #0b172a !important;
+  color: #94a3b8;
   font-weight: 700;
   text-transform: uppercase;
   font-size: 0.725rem;
   letter-spacing: 0.05em;
   padding: 10px 12px;
-  border-bottom: 1px solid var(--card-border);
+  border-bottom: 2px solid rgba(56, 189, 248, 0.25);
   position: sticky;
   top: 0;
-  z-index: 10;
+  z-index: 20;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
 }
 
 .custom-table td {
@@ -617,6 +646,9 @@ body {
   }
 
   .custom-table-container {
+    max-height: 55vh;
+    overflow-y: auto;
+    overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     border-radius: 8px;
   }
