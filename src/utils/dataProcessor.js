@@ -46,25 +46,84 @@ export function parseTmtYear(tmtStr) {
   return null;
 }
 
-export function determineTargetPangkat(jabatanStr) {
-  if (!jabatanStr) return '3/a';
-  const lower = jabatanStr.toLowerCase();
-  
-  if (lower.includes('pemula')) {
-    return '2/c';
-  } else if (lower.includes('terampil')) {
-    return '2/d';
-  } else if (lower.includes('mahir') || lower.includes('ahli pertama') || lower.includes('pertama')) {
-    return '3/b';
-  } else if (lower.includes('penyelia') || lower.includes('ahli muda') || lower.includes('muda')) {
-    return '3/d';
-  } else if (lower.includes('ahli madya') || lower.includes('madya')) {
-    return '4/c';
-  } else if (lower.includes('ahli utama') || lower.includes('utama')) {
-    return '4/e';
+export function determineTargetPangkat(golonganStr, jabatanStr) {
+  const gol = (golonganStr || '').toUpperCase().trim();
+  const jab = (jabatanStr || '').toUpperCase().trim();
+
+  // Next rank calculation by current Golongan (Roman numeral / standard notation)
+  if (gol.includes('IV/E') || gol.includes('4/E')) return 'IV/e (Puncak)';
+  if (gol.includes('IV/D') || gol.includes('4/D')) return 'IV/e';
+  if (gol.includes('IV/C') || gol.includes('4/C')) return 'IV/d';
+  if (gol.includes('IV/B') || gol.includes('4/B')) return 'IV/c';
+  if (gol.includes('IV/A') || gol.includes('4/A')) return 'IV/b';
+
+  if (gol.includes('III/D') || gol.includes('3/D')) return 'IV/a';
+  if (gol.includes('III/C') || gol.includes('3/C')) return 'III/d';
+  if (gol.includes('III/B') || gol.includes('3/B')) return 'III/c';
+  if (gol.includes('III/A') || gol.includes('3/A')) return 'III/b';
+
+  if (gol.includes('II/D') || gol.includes('2/D')) return 'III/a';
+  if (gol.includes('II/C') || gol.includes('2/C')) return 'II/d';
+  if (gol.includes('II/B') || gol.includes('2/B')) return 'II/c';
+  if (gol.includes('II/A') || gol.includes('2/A')) return 'II/b';
+
+  if (gol.includes('I/D') || gol.includes('1/D')) return 'II/a';
+  if (gol.includes('I/C') || gol.includes('1/C')) return 'I/d';
+  if (gol.includes('I/B') || gol.includes('1/B')) return 'I/c';
+  if (gol.includes('I/A') || gol.includes('1/A')) return 'I/b';
+
+  // Fallback by Jabatan string if Golongan string is unparsed
+  if (jab.includes('PEMULA')) return 'II/b';
+  if (jab.includes('TERAMPIL')) return 'II/d';
+  if (jab.includes('MAHIR') || jab.includes('AHLI PERTAMA') || jab.includes('PERTAMA')) return 'III/b';
+  if (jab.includes('PENYELIA') || jab.includes('AHLI MUDA') || jab.includes('MUDA')) return 'III/d';
+  if (jab.includes('AHLI MADYA') || jab.includes('MADYA')) return 'IV/c';
+  if (jab.includes('AHLI UTAMA') || jab.includes('UTAMA')) return 'IV/e';
+
+  return 'III/b';
+}
+
+export function determineProyeksiType(golonganStr, targetPangkatStr) {
+  const gol = (golonganStr || '').toUpperCase().trim();
+  const target = (targetPangkatStr || '').toUpperCase().trim();
+
+  // Check if rank transition jumps to next JF tier: II/a->II/b, II/d->III/a, III/b->III/c, III/d->IV/a, IV/c->IV/d
+  if (
+    (gol.includes('II/A') && target.includes('II/B')) ||
+    (gol.includes('II/D') && target.includes('III/A')) ||
+    (gol.includes('III/B') && target.includes('III/C')) ||
+    (gol.includes('III/D') && target.includes('IV/A')) ||
+    (gol.includes('IV/C') && target.includes('IV/D'))
+  ) {
+    return 'Naik Jenjang';
   }
-  
-  return '3/b';
+
+  return 'Reguler';
+}
+
+export function determineKategoriJf(jabatanStr, golonganStr) {
+  const jab = (jabatanStr || '').toUpperCase().trim();
+  const gol = (golonganStr || '').toUpperCase().trim();
+
+  if (jab.includes('PEMULA')) return { kategori: 'Keterampilan', jenjang: 'Pemula' };
+  if (jab.includes('TERAMPIL')) return { kategori: 'Keterampilan', jenjang: 'Terampil' };
+  if (jab.includes('MAHIR')) return { kategori: 'Keterampilan', jenjang: 'Mahir' };
+  if (jab.includes('PENYELIA')) return { kategori: 'Keterampilan', jenjang: 'Penyelia' };
+
+  if (jab.includes('AHLI PERTAMA') || jab.includes('PERTAMA')) return { kategori: 'Keahlian', jenjang: 'Ahli Pertama' };
+  if (jab.includes('AHLI MUDA') || jab.includes('MUDA')) return { kategori: 'Keahlian', jenjang: 'Ahli Muda' };
+  if (jab.includes('AHLI MADYA') || jab.includes('MADYA')) return { kategori: 'Keahlian', jenjang: 'Ahli Madya' };
+  if (jab.includes('AHLI UTAMA') || jab.includes('UTAMA')) return { kategori: 'Keahlian', jenjang: 'Ahli Utama' };
+
+  // Fallback by Golongan
+  if (gol.includes('II/A')) return { kategori: 'Keterampilan', jenjang: 'Pemula' };
+  if (gol.includes('II/')) return { kategori: 'Keterampilan', jenjang: 'Terampil' };
+  if (gol.includes('III/A') || gol.includes('III/B')) return { kategori: 'Keahlian', jenjang: 'Ahli Pertama' };
+  if (gol.includes('III/C') || gol.includes('III/D')) return { kategori: 'Keahlian', jenjang: 'Ahli Muda' };
+  if (gol.includes('IV/A') || gol.includes('IV/B') || gol.includes('IV/C')) return { kategori: 'Keahlian', jenjang: 'Ahli Madya' };
+  if (gol.includes('IV/D') || gol.includes('IV/E')) return { kategori: 'Keahlian', jenjang: 'Ahli Utama' };
+
+  return { kategori: 'Umum', jenjang: 'Pelaksana' };
 }
 
 export function processEmployeeRow(row, index) {
@@ -119,10 +178,14 @@ export function processEmployeeRow(row, index) {
     }
   }
 
-  // Naik Jenjang (Rule 4 Tahun & Target Pangkat)
+  // Naik Jenjang (Rule 4 Tahun & Target Pangkat & Proyeksi Type)
   const tmtYear = parseTmtYear(tmtPangkat);
   const eligibleYear = tmtYear ? tmtYear + 4 : null;
-  const targetPangkat = determineTargetPangkat(jabatan);
+  const targetPangkat = determineTargetPangkat(golongan, jabatan);
+  const proyeksiType = determineProyeksiType(golongan, targetPangkat);
+  const jfInfo = determineKategoriJf(jabatan, golongan);
+  const kategoriJf = jfInfo.kategori;
+  const jenjangJf = jfInfo.jenjang;
   
   let isEligiblePromotion = eligibleYear ? eligibleYear <= currentYear : false;
   let promotionStatus = 'Belum Eligible';
@@ -165,6 +228,9 @@ export function processEmployeeRow(row, index) {
     statusRetirement,
     eligibleYear,
     targetPangkat,
+    proyeksiType,
+    kategoriJf,
+    jenjangJf,
     isEligiblePromotion,
     promotionStatus
   };
