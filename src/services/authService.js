@@ -534,18 +534,85 @@ export const authService = {
   },
 
   /**
+   * WhatsApp Server API helpers
+   */
+  getWaStatus: async () => {
+    try {
+      const res = await fetch('/api/wa/status', { cache: 'no-store' });
+      if (res.ok) return await res.json();
+    } catch {
+      // ignore
+    }
+    return { status: 'DISCONNECTED', config: {} };
+  },
+
+  saveWaConfig: async (configPayload) => {
+    const res = await fetch('/api/wa/config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(configPayload)
+    });
+    return await res.json();
+  },
+
+  connectWaServer: async (forceNewQr = false) => {
+    const res = await fetch('/api/wa/connect', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ forceNewQr })
+    });
+    return await res.json();
+  },
+
+  disconnectWaServer: async () => {
+    const res = await fetch('/api/wa/disconnect', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    return await res.json();
+  },
+
+  sendTestWaMessage: async (phone) => {
+    const res = await fetch('/api/wa/test', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone })
+    });
+    return await res.json();
+  },
+
+  sendCredentialsToWa: async (userObj) => {
+    try {
+      const originUrl = typeof window !== 'undefined' ? window.location.origin : '';
+      const res = await fetch('/api/wa/notify-approve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user: userObj, originUrl })
+      });
+      return await res.json();
+    } catch (err) {
+      return { success: false, reason: err.message || 'Gagal menghubungi server WA.' };
+    }
+  },
+
+  /**
    * Submit a public registration request from LoginPage (creates account with status: 'PENDING')
+   * Also triggers automatic WA notification to Superadmin & Applicant
    */
   requestAccountRegistration: (userData) => {
-    const { username, nip, name, role, password, opd, jabatan } = userData;
+    const { username, nip, name, role, password, opd, jabatan, noHp } = userData;
 
     const cleanUsername = (username || '').trim().toLowerCase();
     const cleanNip = (nip || '').replace(/\s+/g, '').trim();
+    const cleanPhone = String(noHp || '').replace(/\s+/g, '').trim();
 
     if (!cleanUsername) throw new Error('Username wajib diisi.');
     if (cleanUsername.length < 3) throw new Error('Username minimal 3 karakter.');
     if (!cleanNip) throw new Error('NIP Pegawai wajib diisi.');
     if (!name?.trim()) throw new Error('Nama Lengkap wajib diisi.');
+    if (!cleanPhone || cleanPhone.replace(/\D/g, '').length < 9) {
+      throw new Error('Nomor WhatsApp aktif wajib diisi agar sistem dapat mengirimkan detail akun saat disetujui.');
+    }
     if (!password || password.length < 6) {
       throw new Error('Kata sandi wajib diisi (minimal 6 karakter).');
     }
@@ -582,6 +649,7 @@ export const authService = {
       username: cleanUsername,
       nip: cleanNip,
       name: cleanName,
+      noHp: cleanPhone,
       role: requestedRole,
       jabatan: jabatan || '-',
       password: password,
@@ -598,21 +666,33 @@ export const authService = {
     localStorage.setItem(STORAGE_USERS_KEY, JSON.stringify(allUsers));
     pushStateToServer({ users: allUsers, replaceUsers: false });
 
+    // Trigger WA Server notification to Superadmin & Applicant in background
+    if (typeof window !== 'undefined') {
+      fetch('/api/wa/notify-register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user: pendingUser,
+          originUrl: window.location.origin
+        })
+      }).catch(() => {});
+    }
+
     authService.logActivity({
       user: pendingUser,
       category: 'ACCOUNT',
       action: 'REGISTER_REQUEST',
-      description: `Mengajukan pendaftaran akun baru: ${pendingUser.name} (@${pendingUser.username} • NIP. ${pendingUser.nip}) — Menunggu Approval Superadmin.`,
-      metadata: { targetUserId: pendingUser.id, targetUsername: pendingUser.username }
+      description: `Mengajukan pendaftaran akun baru: ${pendingUser.name} (@${pendingUser.username} • NIP. ${pendingUser.nip} • WA: ${pendingUser.noHp}) — Menunggu Approval Superadmin.`,
+      metadata: { targetUserId: pendingUser.id, targetUsername: pendingUser.username, noHp: pendingUser.noHp }
     });
 
     return pendingUser;
   },
 
   /**
-   * Approve a pending user account (Only Superadmin)
+   * Approve a pending user account (Only Superadmin) and automatically send full account details to registered WhatsApp
    */
-  approveUser: (userId, assignedRole = null) => {
+  approveUser: async (userId, assignedRole = null) => {
     const currentActor = authService.getCurrentUser();
     if (!authService.isSuperAdmin(currentActor)) {
       throw new Error('Akses ditolak. Hanya Superadmin yang dapat menyetujui pendaftaran akun.');
@@ -637,18 +717,35 @@ export const authService = {
       updatedAt: new Date().toISOString()
     };
 
+    const approvedAccount = allUsers[idx];
+
     localStorage.setItem(STORAGE_USERS_KEY, JSON.stringify(allUsers));
-    pushStateToServer({ users: allUsers, replaceUsers: true });
+    await pushStateToServer({ users: allUsers, replaceUsers: true });
+
+    // Automatically send complete account credentials via Server WhatsApp
+    let waDelivery = { success: false, reason: 'Tidak ada nomor WA' };
+    if (approvedAccount.noHp) {
+      waDelivery = await authService.sendCredentialsToWa(approvedAccount);
+    }
 
     authService.logActivity({
       user: currentActor,
       category: 'ACCOUNT',
       action: 'APPROVE_USER',
-      description: `Menyetujui (Approve) pendaftaran akun ${target.name} (@${target.username}) dengan hak akses "${finalRole}".`,
-      metadata: { targetUserId: target.id, targetUsername: target.username }
+      description: `Menyetujui (Approve) pendaftaran akun ${target.name} (@${target.username}) dengan hak akses "${finalRole}". ${
+        waDelivery.success
+          ? `Detail akun terkirim otomatis ke WA (${approvedAccount.noHp}).`
+          : ''
+      }`,
+      metadata: {
+        targetUserId: target.id,
+        targetUsername: target.username,
+        waSent: waDelivery.success,
+        noHp: approvedAccount.noHp || '-'
+      }
     });
 
-    return allUsers[idx];
+    return { user: approvedAccount, waDelivery };
   },
 
   /**
@@ -667,6 +764,14 @@ export const authService = {
     const updated = allUsers.filter((u) => u.id !== userId);
     localStorage.setItem(STORAGE_USERS_KEY, JSON.stringify(updated));
     pushStateToServer({ users: updated, replaceUsers: true });
+
+    if (typeof window !== 'undefined' && target.noHp) {
+      fetch('/api/wa/notify-reject', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user: target })
+      }).catch(() => {});
+    }
 
     authService.logActivity({
       user: currentActor,
@@ -688,10 +793,11 @@ export const authService = {
       throw new Error('Akses ditolak. Hanya Superadmin yang memiliki izin membuat akun.');
     }
 
-    const { username, nip, name, role, password, opd, jabatan } = userData;
+    const { username, nip, name, role, password, opd, jabatan, noHp } = userData;
 
     const cleanUsername = (username || '').trim().toLowerCase();
     const cleanNip = (nip || '').replace(/\s+/g, '').trim();
+    const cleanPhone = String(noHp || '').replace(/\s+/g, '').trim();
 
     if (!cleanUsername) throw new Error('Username wajib diisi.');
     if (cleanUsername.length < 3) throw new Error('Username minimal 3 karakter.');
@@ -727,6 +833,7 @@ export const authService = {
       username: cleanUsername,
       nip: cleanNip,
       name: cleanName,
+      noHp: cleanPhone,
       role: finalRole,
       jabatan: jabatan || '-',
       password: password,
@@ -742,6 +849,10 @@ export const authService = {
     allUsers.push(newUser);
     localStorage.setItem(STORAGE_USERS_KEY, JSON.stringify(allUsers));
     pushStateToServer({ users: allUsers, replaceUsers: true });
+
+    if (!isInitialSetup && newUser.noHp) {
+      authService.sendCredentialsToWa(newUser).catch(() => {});
+    }
 
     authService.logActivity({
       user: currentActor || newUser,

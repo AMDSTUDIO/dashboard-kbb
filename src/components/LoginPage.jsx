@@ -29,6 +29,7 @@ export default function LoginPage({ onLoginSuccess }) {
   // Registration Form State
   const [regNip, setRegNip] = useState('');
   const [regNama, setRegNama] = useState('');
+  const [regNoHp, setRegNoHp] = useState('');
   const [regUsername, setRegUsername] = useState('');
   const [regPassword, setRegPassword] = useState('');
   const [regRole, setRegRole] = useState('Staf Analis Kepegawaian');
@@ -65,6 +66,9 @@ export default function LoginPage({ onLoginSuccess }) {
       if (emp) {
         setVerifiedEmployee(emp);
         setRegNama(emp.nama || '');
+        if (emp.noHp && emp.noHp !== '-') {
+          setRegNoHp(emp.noHp);
+        }
         setRegOpd(emp.opd || 'BKPSDM Kabupaten Bandung Barat');
         setRegJabatan(emp.jabatan || '');
         if (!regUsername) {
@@ -132,6 +136,7 @@ export default function LoginPage({ onLoginSuccess }) {
       const pendingUser = authService.requestAccountRegistration({
         name: regNama || emp.nama,
         nip: regNip,
+        noHp: regNoHp || emp.noHp,
         username: regUsername,
         password: regPassword,
         role: regRole,
@@ -142,13 +147,14 @@ export default function LoginPage({ onLoginSuccess }) {
       // Clear registration fields & switch to login with success banner
       setRegNip('');
       setRegNama('');
+      setRegNoHp('');
       setRegUsername('');
       setRegPassword('');
       setVerifiedEmployee(null);
       setMode('login');
       setIdentifier(pendingUser.username);
       setSuccessInfo(
-        `Pengajuan akun untuk ${pendingUser.name} (@${pendingUser.username}) berhasil dikirim! Akun Anda akan aktif setelah disetujui (Approve) oleh Superadmin.`
+        `Pengajuan akun untuk ${pendingUser.name} (@${pendingUser.username}) berhasil dikirim! Detail akun lengkap akan dikirimkan otomatis oleh Server ke WhatsApp (${pendingUser.noHp}) segera setelah di-Approve oleh Superadmin.`
       );
     } catch (err) {
       setError(err.message || 'Gagal mengajukan pendaftaran akun.');
@@ -433,6 +439,34 @@ export default function LoginPage({ onLoginSuccess }) {
                     outline: 'none'
                   }}
                 />
+              </div>
+
+              {/* Nomor WhatsApp Aktif (Auto-filled from Master Data NIP, editable if changed) */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: '#cbd5e1', marginBottom: '5px' }}>
+                  Nomor WhatsApp Aktif (Penerima Akun dari Server) *
+                </label>
+                <input
+                  type="tel"
+                  value={regNoHp}
+                  onChange={(e) => setRegNoHp(e.target.value)}
+                  placeholder="Contoh: 081234567890"
+                  required
+                  style={{
+                    width: '100%',
+                    boxSizing: 'border-box',
+                    padding: '10px 12px',
+                    background: 'rgba(15, 23, 42, 0.7)',
+                    border: '1px solid rgba(16, 185, 129, 0.4)',
+                    borderRadius: '10px',
+                    color: '#ffffff',
+                    fontSize: '0.84rem',
+                    outline: 'none'
+                  }}
+                />
+                <div style={{ fontSize: '0.7rem', color: '#94a3b8', marginTop: '4px' }}>
+                  Otomatis ditarik dari Master Data KBB (dapat disesuaikan jika nomor WA aktif Anda berbeda).
+                </div>
               </div>
 
               {/* Username & Usulan Role */}
