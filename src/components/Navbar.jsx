@@ -33,15 +33,18 @@ export default function Navbar({
 }) {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const isSuperAdmin = authService.isSuperAdmin(currentUser);
+  const permissions = authService.getRolePermissions(currentUser);
   const pendingCount = isSuperAdmin ? authService.getPendingUsers().length : 0;
 
-  const tabs = [
+  const allTabs = [
     { id: 'overview', label: 'Ringkasan Eksekutif', shortLabel: 'Ringkasan', icon: LayoutDashboard },
     { id: 'jabatan', label: 'Rekap Jabatan Fungsional', shortLabel: 'Rekap Jabatan', icon: Users },
     { id: 'pensiun', label: 'Proyeksi Pensiun BUP', shortLabel: 'Pensiun BUP', icon: CalendarX },
     { id: 'promotion', label: 'Proyeksi Naik Jenjang', shortLabel: 'Naik Jenjang', icon: TrendingUp },
     { id: 'master', label: 'Master Data Pegawai', shortLabel: 'Master Data', icon: Database },
   ];
+
+  const tabs = allTabs.filter((tab) => permissions.allowedTabs.includes(tab.id));
 
   const formattedTime = lastSynced ? new Date(lastSynced).toLocaleTimeString('id-ID', {
     hour: '2-digit',
@@ -169,17 +172,19 @@ export default function Navbar({
                 </div>
               )}
 
-              {/* Live Refresh Button */}
-              <button 
-                onClick={onRefresh} 
-                disabled={isSyncing}
-                className="btn-primary"
-                style={{ padding: '5px 12px', borderRadius: '8px', fontSize: '0.75rem' }}
-                title="Sinkronkan data terbaru dari Google Sheets"
-              >
-                <RefreshCw className={isSyncing ? 'spin-icon' : ''} style={{ width: '14px', height: '14px' }} />
-                {isSyncing ? 'Sync...' : 'Sync'}
-              </button>
+              {/* Live Refresh Button (Only for roles with canSyncData) */}
+              {permissions.canSyncData && (
+                <button 
+                  onClick={onRefresh} 
+                  disabled={isSyncing}
+                  className="btn-primary"
+                  style={{ padding: '5px 12px', borderRadius: '8px', fontSize: '0.75rem' }}
+                  title="Sinkronkan data terbaru dari Google Sheets"
+                >
+                  <RefreshCw className={isSyncing ? 'spin-icon' : ''} style={{ width: '14px', height: '14px' }} />
+                  {isSyncing ? 'Sync...' : 'Sync'}
+                </button>
+              )}
 
               {/* Current User Profile Badge */}
               {currentUser && (
@@ -269,15 +274,17 @@ export default function Navbar({
                 </div>
 
                 {/* Sync Icon Button */}
-                <button 
-                  onClick={onRefresh} 
-                  disabled={isSyncing}
-                  className="btn-primary"
-                  style={{ padding: '5px 8px', borderRadius: '6px', minWidth: 'auto' }}
-                  title="Sinkronkan Data"
-                >
-                  <RefreshCw className={isSyncing ? 'spin-icon' : ''} style={{ width: '13px', height: '13px' }} />
-                </button>
+                {permissions.canSyncData && (
+                  <button 
+                    onClick={onRefresh} 
+                    disabled={isSyncing}
+                    className="btn-primary"
+                    style={{ padding: '5px 8px', borderRadius: '6px', minWidth: 'auto' }}
+                    title="Sinkronkan Data"
+                  >
+                    <RefreshCw className={isSyncing ? 'spin-icon' : ''} style={{ width: '13px', height: '13px' }} />
+                  </button>
+                )}
 
                 {/* Superadmin Only Buttons on Mobile: Kelola Akun & Log Aktivitas */}
                 {isSuperAdmin && (
@@ -372,15 +379,17 @@ export default function Navbar({
                 })}
               </div>
 
-              {/* Quick Search */}
-              <div className="quick-search-header-container">
-                <QuickSearch 
-                  employees={employees} 
-                  onSelectEmployee={onSelectEmployee} 
-                  onOpenMasterSearch={onOpenMasterSearch} 
-                  placeholder="Cari Nama / NIP..."
-                />
-              </div>
+              {/* Quick Search (Only for roles with canQuickSearch) */}
+              {permissions.canQuickSearch && (
+                <div className="quick-search-header-container">
+                  <QuickSearch 
+                    employees={employees} 
+                    onSelectEmployee={onSelectEmployee} 
+                    onOpenMasterSearch={onOpenMasterSearch} 
+                    placeholder="Cari Nama / NIP..."
+                  />
+                </div>
+              )}
             </div>
           </div>
 

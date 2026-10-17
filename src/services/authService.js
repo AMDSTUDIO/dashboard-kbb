@@ -1,4 +1,4 @@
-// Service to manage authentication, session storage, RBAC (Superadmin), account approval workflow, and user activity logs (with IP, Location & Device detection) for KBB Executive Dashboard
+// Service to manage authentication, centralized VPS server sync, RBAC (Superadmin & 4 Role Tiers), account approval workflow, and user activity logs
 
 const STORAGE_SESSION_KEY = 'kbb_dashboard_auth';
 const STORAGE_USERS_KEY = 'kbb_dashboard_users_v3';
@@ -6,11 +6,61 @@ const STORAGE_LOGS_KEY = 'kbb_dashboard_activity_logs';
 const STORAGE_NET_INFO_KEY = 'kbb_dashboard_net_info';
 const MAX_LOGS_COUNT = 500;
 
-// Legacy storage keys to clean up old built-in/demo accounts
 const LEGACY_KEYS_TO_REMOVE = [
   'kbb_dashboard_users',
   'kbb_dashboard_superadmin'
 ];
+
+/**
+ * Definisi Hak Akses & Pembatasan Tampilan untuk setiap Role
+ */
+export const ROLE_PERMISSIONS = {
+  'Superadmin': {
+    level: 0,
+    badgeColor: '#fbbf24',
+    allowedTabs: ['overview', 'jabatan', 'pensiun', 'promotion', 'master'],
+    canSyncData: true,
+    canQuickSearch: true,
+    canManageAccounts: true,
+    description: 'Akses penuh ke seluruh 5 Tab Dashboard, Kelola & Approval Akun, serta Log Aktivitas.'
+  },
+  'Pimpinan / Kepala Badan': {
+    level: 1,
+    badgeColor: '#38bdf8',
+    allowedTabs: ['overview', 'jabatan', 'pensiun', 'promotion'],
+    canSyncData: false,
+    canQuickSearch: true,
+    canManageAccounts: false,
+    description: 'Melihat Ringkasan Eksekutif, Rekap Jabatan Fungsional, Proyeksi Pensiun BUP, & Proyeksi Naik Jenjang.'
+  },
+  'Admin Eksekutif BKPSDM': {
+    level: 2,
+    badgeColor: '#34d399',
+    allowedTabs: ['overview', 'jabatan', 'pensiun', 'promotion', 'master'],
+    canSyncData: true,
+    canQuickSearch: true,
+    canManageAccounts: false,
+    description: 'Melihat seluruh 5 Tab Kepegawaian (termasuk tabel penuh Master Data Pegawai) & fitur Sync Data.'
+  },
+  'Pengawas Kepegawaian': {
+    level: 3,
+    badgeColor: '#a855f7',
+    allowedTabs: ['overview', 'pensiun', 'promotion', 'master'],
+    canSyncData: false,
+    canQuickSearch: true,
+    canManageAccounts: false,
+    description: 'Melihat Ringkasan Eksekutif, Proyeksi Pensiun BUP, Proyeksi Naik Jenjang, & Master Data Pegawai.'
+  },
+  'Staf Analis Kepegawaian': {
+    level: 4,
+    badgeColor: '#94a3b8',
+    allowedTabs: ['overview', 'jabatan', 'promotion'],
+    canSyncData: false,
+    canQuickSearch: false,
+    canManageAccounts: false,
+    description: 'Melihat Ringkasan Eksekutif, Rekap Jabatan Fungsional, & Proyeksi Naik Jenjang (tanpa Master Data penuh).'
+  }
+};
 
 let cachedNetworkInfo = null;
 let networkFetchPromise = null;
@@ -22,7 +72,6 @@ function getDeviceInfo() {
   if (typeof navigator === 'undefined') return 'Unknown Device';
   const ua = navigator.userAgent || '';
 
-  // 1. Device Type & Model Hint
   let deviceType = 'Desktop / PC';
   if (/iPad|Tablet|PlayBook|Silk/i.test(ua) || (ua.includes('Macintosh') && navigator.maxTouchPoints > 1)) {
     deviceType = 'Tablet (iPad/Android)';
@@ -30,7 +79,6 @@ function getDeviceInfo() {
     deviceType = 'Smartphone (Mobile)';
   }
 
-  // Extract specific phone/device model on Android or iOS if available
   let modelHint = '';
   if (ua.includes('iPhone')) modelHint = 'iPhone';
   else if (ua.includes('iPad')) modelHint = 'iPad';
@@ -45,7 +93,6 @@ function getDeviceInfo() {
     }
   }
 
-  // 2. Operating System + Version
   let os = 'OS';
   if (ua.includes('Windows NT 10.0')) os = 'Windows 10/11';
   else if (ua.includes('Windows NT 6.3')) os = 'Windows 8.1';
@@ -63,7 +110,6 @@ function getDeviceInfo() {
     os = 'Linux';
   }
 
-  // 3. Browser + Major Version
   let browser = 'Browser';
   const edgeMatch = ua.match(/Edg\/(\d+)/);
   const chromeMatch = ua.match(/Chrome\/(\d+)/);
@@ -79,9 +125,6 @@ function getDeviceInfo() {
   return `${deviceType}${modelPart} • ${os} • ${browser}`;
 }
 
-/**
- * Retrieve cached IP & Geolocation info from memory or sessionStorage
- */
 function getCachedNetworkInfo() {
   if (cachedNetworkInfo) return cachedNetworkInfo;
   try {
@@ -91,14 +134,11 @@ function getCachedNetworkInfo() {
       return cachedNetworkInfo;
     }
   } catch {
-    // ignore storage errors
+    // ignore
   }
   return null;
 }
 
-/**
- * Fetch public IP address, City/Region/Country location, and ISP asynchronously with multi-provider fallback
- */
 export async function fetchClientNetworkInfo() {
   const existing = getCachedNetworkInfo();
   if (existing && existing.ip && existing.ip !== 'Mendeteksi...') {
@@ -110,7 +150,7 @@ export async function fetchClientNetworkInfo() {
   networkFetchPromise = (async () => {
     let result = null;
 
-    // Provider 1: ipwho.is (HTTPS, no key, fast)
+    // Provider 1: ipwho.is
     try {
       const res = await fetch('https://ipwho.is/', { cache: 'no-store' });
       if (res.ok) {
@@ -120,14 +160,12 @@ export async function fetchClientNetworkInfo() {
           result = {
             ip: data.ip,
             location: locParts.join(', ') || 'Lokasi Terdeteksi',
-            isp: data.connection?.isp || data.connection?.org || '',
-            latitude: data.latitude,
-            longitude: data.longitude
+            isp: data.connection?.isp || data.connection?.org || ''
           };
         }
       }
     } catch {
-      // Fallback to next provider
+      // Fallback
     }
 
     // Provider 2: ipapi.co/json
@@ -141,18 +179,16 @@ export async function fetchClientNetworkInfo() {
             result = {
               ip: data.ip,
               location: locParts.join(', ') || 'Lokasi Terdeteksi',
-              isp: data.org || '',
-              latitude: data.latitude,
-              longitude: data.longitude
+              isp: data.org || ''
             };
           }
         }
       } catch {
-        // Fallback to next provider
+        // Fallback
       }
     }
 
-    // Provider 3: api.ipify.org (IP only fallback)
+    // Provider 3: api.ipify.org
     if (!result) {
       try {
         const res = await fetch('https://api.ipify.org?format=json', { cache: 'no-store' });
@@ -167,7 +203,7 @@ export async function fetchClientNetworkInfo() {
           }
         }
       } catch {
-        // Offline or blocked
+        // Offline
       }
     }
 
@@ -206,6 +242,7 @@ export async function fetchClientNetworkInfo() {
         });
         if (changed) {
           localStorage.setItem(STORAGE_LOGS_KEY, JSON.stringify(updated));
+          pushStateToServer({ logs: updated, replaceLogs: false });
         }
       }
     } catch {
@@ -219,16 +256,88 @@ export async function fetchClientNetworkInfo() {
   return networkFetchPromise;
 }
 
-// Kick off network info detection immediately on module load
+/**
+ * Push local state changes to centralized VPS server (`/api/state`)
+ */
+async function pushStateToServer({ users, logs, replaceUsers = false, replaceLogs = false }) {
+  if (typeof window === 'undefined') return null;
+  try {
+    const res = await fetch('/api/state', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        users,
+        logs,
+        replaceUsers,
+        replaceLogs
+      })
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.success) {
+        if (Array.isArray(data.users)) {
+          localStorage.setItem(STORAGE_USERS_KEY, JSON.stringify(data.users));
+        }
+        if (Array.isArray(data.logs)) {
+          localStorage.setItem(STORAGE_LOGS_KEY, JSON.stringify(data.logs));
+        }
+        return data;
+      }
+    }
+  } catch {
+    // Fallback silently to localStorage if static host has no /api/state
+  }
+  return null;
+}
+
+/**
+ * Sync local storage with centralized VPS server (`/api/state`)
+ * Also migrates any accounts created earlier in localStorage up to the server DB!
+ */
+export async function syncWithServer() {
+  if (typeof window === 'undefined') return null;
+  try {
+    const localUsers = authService.getAllUsers();
+    const localLogs = authService.getActivityLogs();
+
+    const res = await fetch('/api/state', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        users: localUsers,
+        logs: localLogs,
+        replaceUsers: false,
+        replaceLogs: false
+      })
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.success) {
+        if (Array.isArray(data.users)) {
+          localStorage.setItem(STORAGE_USERS_KEY, JSON.stringify(data.users));
+        }
+        if (Array.isArray(data.logs)) {
+          localStorage.setItem(STORAGE_LOGS_KEY, JSON.stringify(data.logs));
+        }
+        return data;
+      }
+    }
+  } catch {
+    // Fallback to localStorage if /api/state is not reachable
+  }
+  return null;
+}
+
 if (typeof window !== 'undefined') {
   fetchClientNetworkInfo();
+  syncWithServer();
 }
 
 function cleanupLegacyStorage() {
   try {
     LEGACY_KEYS_TO_REMOVE.forEach((k) => localStorage.removeItem(k));
 
-    // Migrate only genuine user-created accounts from v2 (excluding any built-in/default accounts)
     const v3Raw = localStorage.getItem(STORAGE_USERS_KEY);
     if (!v3Raw) {
       const v2Raw = localStorage.getItem('kbb_dashboard_users_v2');
@@ -261,6 +370,25 @@ function cleanupLegacyStorage() {
 
 export const authService = {
   /**
+   * Sync with centralized VPS server
+   */
+  syncWithServer,
+
+  /**
+   * Get role permissions object for a given user or role name
+   */
+  getRolePermissions: (userOrRole) => {
+    if (!userOrRole) return ROLE_PERMISSIONS['Staf Analis Kepegawaian'];
+    if (typeof userOrRole === 'object') {
+      if (userOrRole.isSuperAdmin || userOrRole.role === 'Superadmin') {
+        return ROLE_PERMISSIONS['Superadmin'];
+      }
+      return ROLE_PERMISSIONS[userOrRole.role] || ROLE_PERMISSIONS['Admin Eksekutif BKPSDM'];
+    }
+    return ROLE_PERMISSIONS[userOrRole] || ROLE_PERMISSIONS['Admin Eksekutif BKPSDM'];
+  },
+
+  /**
    * Check whether a user object has Superadmin privileges
    */
   isSuperAdmin: (user) => {
@@ -269,7 +397,7 @@ export const authService = {
   },
 
   /**
-   * Check if at least one approved Superadmin account exists in the database
+   * Check if at least one approved Superadmin account exists
    */
   hasRegisteredSuperAdmin: () => {
     const users = authService.getAllUsers();
@@ -277,7 +405,7 @@ export const authService = {
   },
 
   /**
-   * Get all users (both APPROVED and PENDING, 100% custom created accounts, no built-in system accounts)
+   * Get all users (both APPROVED and PENDING)
    */
   getAllUsers: () => {
     cleanupLegacyStorage();
@@ -348,7 +476,7 @@ export const authService = {
         userRole: actor.role || '-',
         userOpd: actor.opd || '-',
         userAvatar: actor.avatar || 'US',
-        category, // 'AUTH' | 'ACCOUNT' | 'NAVIGATION' | 'DATA'
+        category,
         action,
         description,
         deviceInfo: getDeviceInfo(),
@@ -361,7 +489,8 @@ export const authService = {
       const updatedLogs = [newEntry, ...logs].slice(0, MAX_LOGS_COUNT);
       localStorage.setItem(STORAGE_LOGS_KEY, JSON.stringify(updatedLogs));
 
-      // If network info wasn't cached yet, trigger fetch which will auto-backfill this log entry
+      pushStateToServer({ logs: [newEntry], replaceLogs: false });
+
       if (!netInfo) {
         fetchClientNetworkInfo();
       }
@@ -395,12 +524,13 @@ export const authService = {
       throw new Error('Akses ditolak. Hanya Superadmin yang dapat menghapus riwayat log.');
     }
     localStorage.setItem(STORAGE_LOGS_KEY, JSON.stringify([]));
-    authService.logActivity({
+    const resetLog = authService.logActivity({
       user: current,
       category: 'ACCOUNT',
       action: 'CLEAR_LOGS',
       description: 'Superadmin membersihkan seluruh riwayat log aktivitas sistem.'
     });
+    pushStateToServer({ logs: resetLog ? [resetLog] : [], replaceLogs: true });
   },
 
   /**
@@ -422,7 +552,6 @@ export const authService = {
 
     const allUsers = authService.getAllUsers();
 
-    // Check duplicate username or NIP
     const existing = allUsers.find(
       (u) => u.username.toLowerCase() === cleanUsername || u.nip === cleanNip
     );
@@ -467,6 +596,7 @@ export const authService = {
 
     allUsers.push(pendingUser);
     localStorage.setItem(STORAGE_USERS_KEY, JSON.stringify(allUsers));
+    pushStateToServer({ users: allUsers, replaceUsers: false });
 
     authService.logActivity({
       user: pendingUser,
@@ -503,10 +633,12 @@ export const authService = {
       isSuperAdmin: finalRole === 'Superadmin',
       status: 'APPROVED',
       approvedAt: new Date().toISOString(),
-      approvedBy: currentActor.username
+      approvedBy: currentActor.username,
+      updatedAt: new Date().toISOString()
     };
 
     localStorage.setItem(STORAGE_USERS_KEY, JSON.stringify(allUsers));
+    pushStateToServer({ users: allUsers, replaceUsers: true });
 
     authService.logActivity({
       user: currentActor,
@@ -534,6 +666,7 @@ export const authService = {
 
     const updated = allUsers.filter((u) => u.id !== userId);
     localStorage.setItem(STORAGE_USERS_KEY, JSON.stringify(updated));
+    pushStateToServer({ users: updated, replaceUsers: true });
 
     authService.logActivity({
       user: currentActor,
@@ -545,7 +678,7 @@ export const authService = {
   },
 
   /**
-   * Register a new user account manually (Allowed for Superadmin, or during initial first-time Superadmin setup when no Superadmin exists yet)
+   * Register a new user account manually (Only Superadmin)
    */
   registerUser: (userData, isInitialSetup = false) => {
     const currentActor = authService.getCurrentUser();
@@ -570,7 +703,6 @@ export const authService = {
 
     const allUsers = authService.getAllUsers();
 
-    // Check duplicate username or NIP
     const existing = allUsers.find(
       (u) => u.username.toLowerCase() === cleanUsername || u.nip === cleanNip
     );
@@ -609,14 +741,13 @@ export const authService = {
 
     allUsers.push(newUser);
     localStorage.setItem(STORAGE_USERS_KEY, JSON.stringify(allUsers));
+    pushStateToServer({ users: allUsers, replaceUsers: true });
 
     authService.logActivity({
       user: currentActor || newUser,
       category: 'ACCOUNT',
       action: 'CREATE_USER',
-      description: isInitialSetup
-        ? `Inisialisasi akun Superadmin utama: ${newUser.name} (@${newUser.username}).`
-        : `Membuat akun baru: ${newUser.name} (@${newUser.username}) dengan role "${newUser.role}".`,
+      description: `Membuat akun baru: ${newUser.name} (@${newUser.username}) dengan role "${newUser.role}".`,
       metadata: { targetUserId: newUser.id, targetUsername: newUser.username }
     });
 
@@ -650,6 +781,7 @@ export const authService = {
     };
 
     localStorage.setItem(STORAGE_USERS_KEY, JSON.stringify(allUsers));
+    pushStateToServer({ users: allUsers, replaceUsers: true });
 
     authService.logActivity({
       user: currentActor,
@@ -677,6 +809,7 @@ export const authService = {
 
     const updated = allUsers.filter((u) => u.id !== userId);
     localStorage.setItem(STORAGE_USERS_KEY, JSON.stringify(updated));
+    pushStateToServer({ users: updated, replaceUsers: true });
 
     authService.logActivity({
       user: currentActor,
@@ -698,7 +831,6 @@ export const authService = {
         sessionStorage.getItem(STORAGE_SESSION_KEY);
       if (saved) {
         const sessionUser = JSON.parse(saved);
-        // Reject any legacy built-in/default session IDs
         if (
           sessionUser.id === '1' ||
           sessionUser.id === '2' ||
@@ -711,7 +843,6 @@ export const authService = {
           return null;
         }
 
-        // Verify user still exists and is APPROVED
         const allUsers = authService.getAllUsers();
         const registered = allUsers.find(
           (u) => u.id === sessionUser.id && u.status === 'APPROVED'
@@ -735,13 +866,15 @@ export const authService = {
   },
 
   /**
-   * Perform strict login against registered & approved users only
+   * Perform strict login against registered & approved users (syncs with centralized server first)
    */
   login: async (identifier, password, rememberMe = true) => {
-    // Ensure network info (IP & Location) is ready before recording login log
-    await Promise.race([
-      fetchClientNetworkInfo(),
-      new Promise((resolve) => setTimeout(resolve, 600))
+    await Promise.all([
+      syncWithServer(),
+      Promise.race([
+        fetchClientNetworkInfo(),
+        new Promise((resolve) => setTimeout(resolve, 600))
+      ])
     ]);
 
     const cleanId = (identifier || '').trim().toLowerCase();
@@ -757,9 +890,25 @@ export const authService = {
     const allUsers = authService.getAllUsers();
 
     // Find user by username or NIP
-    const user = allUsers.find(
+    let user = allUsers.find(
       (u) => u.username.toLowerCase() === cleanId || u.nip.toLowerCase() === cleanId
     );
+
+    // Bootstrap Superadmin fallback if 0 Superadmins exist yet on a brand-new server
+    if (!user && !authService.hasRegisteredSuperAdmin() && cleanId === 'superadmin' && password === 'SuperAdmin@KBB2026') {
+      user = authService.registerUser(
+        {
+          name: 'Superadmin BKPSDM',
+          nip: '199001012020011001',
+          username: 'superadmin',
+          password: 'SuperAdmin@KBB2026',
+          role: 'Superadmin',
+          opd: 'BKPSDM Kabupaten Bandung Barat',
+          jabatan: 'Super Administrator'
+        },
+        true
+      );
+    }
 
     if (!user) {
       authService.logActivity({
@@ -769,7 +918,7 @@ export const authService = {
         description: `Percobaan login gagal: Akun "${cleanId}" tidak terdaftar dalam sistem.`,
         metadata: { attemptedIdentifier: cleanId, reason: 'USER_NOT_FOUND' }
       });
-      throw new Error('Akun tidak ditemukan. Silakan ajukan pendaftaran akun terlebih dahulu.');
+      throw new Error('Akun tidak ditemukan. Silakan ajukan pendaftaran akun pada tab Daftar Akun.');
     }
 
     if (user.password !== password) {
@@ -799,17 +948,19 @@ export const authService = {
     const nowIso = new Date().toISOString();
     const netInfo = getCachedNetworkInfo();
 
-    const idx = allUsers.findIndex((u) => u.id === user.id);
+    const latestUsers = authService.getAllUsers();
+    const idx = latestUsers.findIndex((u) => u.id === user.id);
     if (idx !== -1) {
-      allUsers[idx] = {
-        ...allUsers[idx],
+      latestUsers[idx] = {
+        ...latestUsers[idx],
         lastLoginAt: nowIso,
         lastIp: netInfo?.ip || '-',
         lastLocation: netInfo?.location || '-',
         lastDevice: getDeviceInfo(),
-        loginCount: (allUsers[idx].loginCount || 0) + 1
+        loginCount: (latestUsers[idx].loginCount || 0) + 1
       };
-      localStorage.setItem(STORAGE_USERS_KEY, JSON.stringify(allUsers));
+      localStorage.setItem(STORAGE_USERS_KEY, JSON.stringify(latestUsers));
+      pushStateToServer({ users: latestUsers, replaceUsers: false });
     }
 
     const { password: _, ...safeUser } = user;

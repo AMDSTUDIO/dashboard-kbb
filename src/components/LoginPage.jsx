@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   Lock, 
   User, 
@@ -13,13 +13,12 @@ import {
   CheckCircle2,
   Search
 } from 'lucide-react';
-import { authService } from '../services/authService';
+import { authService, ROLE_PERMISSIONS } from '../services/authService';
 import { findEmployeeByNip } from '../services/sheetsService';
 
 export default function LoginPage({ onLoginSuccess }) {
-  const [hasSuperAdmin, setHasSuperAdmin] = useState(() => authService.hasRegisteredSuperAdmin());
-  // 'login' | 'register' | 'setup'
-  const [mode, setMode] = useState(() => (authService.hasRegisteredSuperAdmin() ? 'login' : 'setup'));
+  // 'login' | 'register'
+  const [mode, setMode] = useState('login');
 
   // Login State
   const [identifier, setIdentifier] = useState('');
@@ -27,7 +26,7 @@ export default function LoginPage({ onLoginSuccess }) {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
 
-  // Registration & Setup Form State
+  // Registration Form State
   const [regNip, setRegNip] = useState('');
   const [regNama, setRegNama] = useState('');
   const [regUsername, setRegUsername] = useState('');
@@ -44,14 +43,6 @@ export default function LoginPage({ onLoginSuccess }) {
   const [error, setError] = useState('');
   const [successInfo, setSuccessInfo] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  useEffect(() => {
-    const exists = authService.hasRegisteredSuperAdmin();
-    setHasSuperAdmin(exists);
-    if (!exists) {
-      setMode('setup');
-    }
-  }, []);
 
   const resetMessages = () => {
     setError('');
@@ -89,7 +80,7 @@ export default function LoginPage({ onLoginSuccess }) {
         setNipCheckError('NIP tidak ditemukan dalam Master Data Pegawai BKPSDM KBB.');
         return null;
       }
-    } catch (err) {
+    } catch {
       setNipCheckError('Gagal memverifikasi NIP ke database kepegawaian. Periksa koneksi Anda.');
       return null;
     } finally {
@@ -166,34 +157,6 @@ export default function LoginPage({ onLoginSuccess }) {
     }
   };
 
-  const handleSetupSuperAdmin = async (e) => {
-    e.preventDefault();
-    resetMessages();
-    setIsSubmitting(true);
-
-    try {
-      authService.registerUser(
-        {
-          name: regNama,
-          nip: regNip,
-          username: regUsername,
-          password: regPassword,
-          role: 'Superadmin',
-          opd: regOpd,
-          jabatan: regJabatan || 'Super Administrator'
-        },
-        true
-      );
-
-      const loggedInUser = await authService.login(regUsername, regPassword, true);
-      onLoginSuccess(loggedInUser);
-    } catch (err) {
-      setError(err.message || 'Gagal membuat akun Superadmin.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   return (
     <div style={{ 
       minHeight: '100vh', 
@@ -264,15 +227,13 @@ export default function LoginPage({ onLoginSuccess }) {
               DASHBOARD <span style={{ color: '#38bdf8' }}>EKSEKUTIF</span>
             </h2>
             <p style={{ fontSize: '0.8rem', color: '#94a3b8', margin: 0 }}>
-              {mode === 'setup'
-                ? 'Inisialisasi Akun Superadmin Utama'
-                : mode === 'register'
+              {mode === 'register'
                 ? 'Formulir Pengajuan Akun Pegawai ASN KBB'
                 : 'Portal Masuk Analisis & Infografik Kepegawaian KBB'}
             </p>
           </div>
 
-          {/* Mode Switcher Tabs */}
+          {/* Mode Switcher Tabs: Only Masuk (Login) & Daftar Akun */}
           <div
             style={{
               display: 'flex',
@@ -327,30 +288,6 @@ export default function LoginPage({ onLoginSuccess }) {
             >
               Daftar Akun
             </button>
-
-            {!hasSuperAdmin && (
-              <button
-                type="button"
-                onClick={() => {
-                  setMode('setup');
-                  resetMessages();
-                }}
-                style={{
-                  flex: 1,
-                  padding: '8px 10px',
-                  borderRadius: '8px',
-                  border: 'none',
-                  fontSize: '0.78rem',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  background: mode === 'setup' ? 'rgba(245, 158, 11, 0.2)' : 'transparent',
-                  color: mode === 'setup' ? '#fbbf24' : '#94a3b8',
-                  transition: 'all 0.2s'
-                }}
-              >
-                Setup Superadmin
-              </button>
-            )}
           </div>
 
           {/* Success Notification Banner */}
@@ -551,6 +488,24 @@ export default function LoginPage({ onLoginSuccess }) {
                 </div>
               </div>
 
+              {/* Info Box Hak Akses Berdasarkan Tingkatan Role */}
+              {ROLE_PERMISSIONS[regRole] && (
+                <div
+                  style={{
+                    padding: '8px 12px',
+                    borderRadius: '8px',
+                    background: 'rgba(15, 23, 42, 0.8)',
+                    border: '1px solid rgba(56, 189, 248, 0.25)',
+                    fontSize: '0.73rem',
+                    color: '#cbd5e1',
+                    lineHeight: 1.4
+                  }}
+                >
+                  <strong style={{ color: '#38bdf8' }}>Cakupan Akses ({regRole}):</strong>{' '}
+                  {ROLE_PERMISSIONS[regRole].description}
+                </div>
+              )}
+
               {/* Kata Sandi */}
               <div>
                 <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: '#cbd5e1', marginBottom: '5px' }}>
@@ -646,192 +601,8 @@ export default function LoginPage({ onLoginSuccess }) {
                 )}
               </button>
             </form>
-          ) : mode === 'setup' && !hasSuperAdmin ? (
-            /* MODE 2: INITIAL SUPERADMIN SETUP (IF 0 SUPERADMINS EXIST) */
-            <form onSubmit={handleSetupSuperAdmin} style={{ display: 'flex', flexDirection: 'column', gap: '13px', width: '100%' }}>
-              <div
-                style={{
-                  padding: '10px 12px',
-                  borderRadius: '10px',
-                  background: 'rgba(245, 158, 11, 0.12)',
-                  border: '1px solid rgba(245, 158, 11, 0.3)',
-                  fontSize: '0.75rem',
-                  color: '#fde68a',
-                  lineHeight: 1.4
-                }}
-              >
-                Belum ada akun <strong>Superadmin</strong> terdaftar. Silakan buat akun Superadmin utama Anda (bisa gunakan fitur <strong>Cek NIP</strong> untuk auto-fill).
-              </div>
-
-              {/* NIP + Cek NIP */}
-              <div>
-                <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: '#cbd5e1', marginBottom: '5px' }}>
-                  NIP Superadmin *
-                </label>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <input
-                    type="text"
-                    value={regNip}
-                    onChange={(e) => handleNipInputChange(e.target.value)}
-                    placeholder="Masukkan NIP"
-                    required
-                    style={{
-                      flex: 1,
-                      boxSizing: 'border-box',
-                      padding: '10px 12px',
-                      background: 'rgba(15, 23, 42, 0.7)',
-                      border: '1px solid rgba(255, 255, 255, 0.12)',
-                      borderRadius: '10px',
-                      color: '#ffffff',
-                      fontSize: '0.84rem',
-                      outline: 'none'
-                    }}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => handleVerifyNip(regNip)}
-                    disabled={isCheckingNip}
-                    className="btn-secondary"
-                    style={{
-                      padding: '0 12px',
-                      borderRadius: '10px',
-                      fontSize: '0.75rem',
-                      color: '#38bdf8',
-                      borderColor: 'rgba(56, 189, 248, 0.35)'
-                    }}
-                  >
-                    {isCheckingNip ? <Loader2 className="spin-icon" style={{ width: '14px', height: '14px' }} /> : <Search style={{ width: '14px', height: '14px' }} />}
-                    Cek NIP
-                  </button>
-                </div>
-                {verifiedEmployee && (
-                  <div style={{ marginTop: '5px', fontSize: '0.72rem', color: '#34d399' }}>
-                    ✓ Data ditemukan: {verifiedEmployee.nama}
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: '#cbd5e1', marginBottom: '5px' }}>
-                  Nama Lengkap Superadmin *
-                </label>
-                <input
-                  type="text"
-                  value={regNama}
-                  onChange={(e) => setRegNama(e.target.value)}
-                  placeholder="Masukkan Nama Lengkap"
-                  required
-                  style={{
-                    width: '100%',
-                    boxSizing: 'border-box',
-                    padding: '10px 14px',
-                    background: 'rgba(15, 23, 42, 0.7)',
-                    border: '1px solid rgba(255, 255, 255, 0.12)',
-                    borderRadius: '10px',
-                    color: '#ffffff',
-                    fontSize: '0.84rem',
-                    outline: 'none'
-                  }}
-                />
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: '#cbd5e1', marginBottom: '5px' }}>
-                    Username Login *
-                  </label>
-                  <input
-                    type="text"
-                    value={regUsername}
-                    onChange={(e) => setRegUsername(e.target.value)}
-                    placeholder="superadmin"
-                    required
-                    style={{
-                      width: '100%',
-                      boxSizing: 'border-box',
-                      padding: '10px 12px',
-                      background: 'rgba(15, 23, 42, 0.7)',
-                      border: '1px solid rgba(255, 255, 255, 0.12)',
-                      borderRadius: '10px',
-                      color: '#ffffff',
-                      fontSize: '0.84rem',
-                      outline: 'none'
-                    }}
-                  />
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: '#cbd5e1', marginBottom: '5px' }}>
-                    Kata Sandi (Min. 6) *
-                  </label>
-                  <div style={{ position: 'relative' }}>
-                    <input
-                      type={showPassword ? 'text' : 'password'}
-                      value={regPassword}
-                      onChange={(e) => setRegPassword(e.target.value)}
-                      placeholder="Kata Sandi"
-                      required
-                      style={{
-                        width: '100%',
-                        boxSizing: 'border-box',
-                        padding: '10px 34px 10px 12px',
-                        background: 'rgba(15, 23, 42, 0.7)',
-                        border: '1px solid rgba(255, 255, 255, 0.12)',
-                        borderRadius: '10px',
-                        color: '#ffffff',
-                        fontSize: '0.84rem',
-                        outline: 'none'
-                      }}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      style={{
-                        position: 'absolute',
-                        right: '8px',
-                        top: '50%',
-                        transform: 'translateY(-50%)',
-                        background: 'none',
-                        border: 'none',
-                        color: '#64748b',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      {showPassword ? <EyeOff style={{ width: '15px', height: '15px' }} /> : <Eye style={{ width: '15px', height: '15px' }} />}
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="btn-primary"
-                style={{
-                  width: '100%',
-                  padding: '12px 16px',
-                  borderRadius: '12px',
-                  justifyContent: 'center',
-                  fontSize: '0.88rem',
-                  fontWeight: 700,
-                  marginTop: '4px'
-                }}
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="spin-icon" style={{ width: '18px', height: '18px' }} />
-                    Membuat Akun Superadmin...
-                  </>
-                ) : (
-                  <>
-                    <UserPlus style={{ width: '18px', height: '18px' }} />
-                    Simpan & Masuk sebagai Superadmin
-                  </>
-                )}
-              </button>
-            </form>
           ) : (
-            /* MODE 3: NORMAL LOGIN FORM */
+            /* MODE 2: NORMAL LOGIN FORM */
             <form onSubmit={handleLoginSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '18px', width: '100%', boxSizing: 'border-box' }}>
               
               {/* Username / NIP Field */}

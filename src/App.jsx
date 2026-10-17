@@ -47,8 +47,10 @@ export default function App() {
 
   // Optional filter when jumping from AdminUserModal to a specific account's log
   const [selectedLogAccountFilter, setSelectedLogAccountFilter] = useState(null);
+  const [, setServerSyncTick] = useState(0);
 
   const isSuperAdmin = authService.isSuperAdmin(currentUser);
+  const permissions = authService.getRolePermissions(currentUser);
 
   const loadData = async (isManualTrigger = false) => {
     setIsSyncing(true);
@@ -77,12 +79,24 @@ export default function App() {
   };
 
   useEffect(() => {
+    authService.syncWithServer().then(() => {
+      setServerSyncTick((t) => t + 1);
+    });
     if (currentUser) {
       loadData(false);
+      const interval = setInterval(() => {
+        authService.syncWithServer().then(() => {
+          setServerSyncTick((t) => t + 1);
+        });
+      }, 15000);
+      return () => clearInterval(interval);
     }
   }, [currentUser]);
 
   const handleChangeTab = (tabId) => {
+    if (!permissions.allowedTabs.includes(tabId)) {
+      return;
+    }
     setActiveTab(tabId);
     if (currentUser && tabId !== activeTab) {
       authService.logActivity({
@@ -206,7 +220,7 @@ export default function App() {
         ) : (
           <>
             {/* TAB 1: Ringkasan Eksekutif */}
-            {activeTab === 'overview' && (
+            {activeTab === 'overview' && permissions.allowedTabs.includes('overview') && (
               <>
                 <KpiOverview stats={dataset.stats} />
                 <ChartsSection stats={dataset.stats} />
@@ -219,7 +233,7 @@ export default function App() {
             )}
 
             {/* TAB 2: Rekap Jabatan Fungsional */}
-            {activeTab === 'jabatan' && (
+            {activeTab === 'jabatan' && permissions.allowedTabs.includes('jabatan') && (
               <JabatanRecap 
                 jabatanList={dataset.stats?.jabatanList}
                 stats={dataset.stats}
@@ -228,7 +242,7 @@ export default function App() {
             )}
 
             {/* TAB 3: Proyeksi Pensiun BUP */}
-            {activeTab === 'pensiun' && (
+            {activeTab === 'pensiun' && permissions.allowedTabs.includes('pensiun') && (
               <ProyeksiPensiun 
                 employees={dataset.employees}
                 stats={dataset.stats}
@@ -237,7 +251,7 @@ export default function App() {
             )}
 
             {/* TAB 4: Proyeksi Naik Jenjang */}
-            {activeTab === 'promotion' && (
+            {activeTab === 'promotion' && permissions.allowedTabs.includes('promotion') && (
               <ProyeksiNaikJenjang 
                 employees={dataset.employees}
                 stats={dataset.stats}
@@ -246,7 +260,7 @@ export default function App() {
             )}
 
             {/* TAB 5: Master Data Pegawai */}
-            {activeTab === 'master' && (
+            {activeTab === 'master' && permissions.allowedTabs.includes('master') && (
               <EmployeeTable 
                 employees={dataset.employees}
                 stats={dataset.stats}

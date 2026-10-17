@@ -175,6 +175,10 @@ export default function ActivityLogPanel({
   const loadAuditData = () => {
     setLogs(authService.getActivityLogs());
     setUsers(authService.getAllUsers());
+    authService.syncWithServer().then(() => {
+      setLogs(authService.getActivityLogs());
+      setUsers(authService.getAllUsers());
+    });
   };
 
   useEffect(() => {

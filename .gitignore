@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Server runtime database (preserve accounts & logs on VPS)
+server/data/
+

@@ -17,7 +17,7 @@ import {
   Search,
   Loader2
 } from 'lucide-react';
-import { authService } from '../services/authService';
+import { authService, ROLE_PERMISSIONS } from '../services/authService';
 import { findEmployeeByNip } from '../services/sheetsService';
 
 export default function AdminUserModal({ onClose, onViewAccountLogs, onAccountDeleted, onAccountsUpdated }) {
@@ -68,6 +68,9 @@ export default function AdminUserModal({ onClose, onViewAccountLogs, onAccountDe
 
   useEffect(() => {
     loadUsers(true);
+    authService.syncWithServer().then(() => {
+      loadUsers(true);
+    });
   }, []);
 
   const handleLookupNipCreate = async () => {
