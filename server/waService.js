@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import QRCode from 'qrcode';
@@ -7,7 +8,26 @@ import pino from 'pino';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const DATA_DIR = path.join(__dirname, 'data');
+function resolveWritableDataDir() {
+  const preferred = path.join(__dirname, 'data');
+  try {
+    if (!fs.existsSync(preferred)) {
+      fs.mkdirSync(preferred, { recursive: true, mode: 0o700 });
+    }
+    const testDir = path.join(preferred, '.perm-check');
+    fs.mkdirSync(testDir, { recursive: true, mode: 0o700 });
+    fs.rmSync(testDir, { recursive: true, force: true });
+    return preferred;
+  } catch {
+    const fallback = path.join(os.tmpdir(), 'dashboard-kbb-data');
+    if (!fs.existsSync(fallback)) {
+      fs.mkdirSync(fallback, { recursive: true, mode: 0o700 });
+    }
+    return fallback;
+  }
+}
+
+const DATA_DIR = resolveWritableDataDir();
 const WA_CONFIG_FILE = path.join(DATA_DIR, 'wa-config.json');
 const WA_AUTH_DIR = path.join(DATA_DIR, 'wa-auth');
 
@@ -80,10 +100,10 @@ export function normalizeWaPhone(rawPhone) {
 
 function ensureConfigFile() {
   if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
+    fs.mkdirSync(DATA_DIR, { recursive: true, mode: 0o700 });
   }
   if (!fs.existsSync(WA_CONFIG_FILE)) {
-    fs.writeFileSync(WA_CONFIG_FILE, JSON.stringify(DEFAULT_CONFIG, null, 2), 'utf-8');
+    fs.writeFileSync(WA_CONFIG_FILE, JSON.stringify(DEFAULT_CONFIG, null, 2), { encoding: 'utf-8', mode: 0o600 });
   }
 }
 
@@ -112,7 +132,7 @@ export function saveWaConfig(partialConfig) {
       .join(', ');
   }
   ensureConfigFile();
-  fs.writeFileSync(WA_CONFIG_FILE, JSON.stringify(updated, null, 2), 'utf-8');
+  fs.writeFileSync(WA_CONFIG_FILE, JSON.stringify(updated, null, 2), { encoding: 'utf-8', mode: 0o600 });
   return updated;
 }
 
@@ -122,7 +142,6 @@ export function getWaStatus() {
     ...connectionState,
     config: {
       ...config,
-      // Mask token only partially if needed, or return so Superadmin can edit
       gatewayToken: config.gatewayToken || ''
     }
   };
@@ -154,7 +173,7 @@ export async function startWaServerSocket(forceNewQr = false) {
 
   try {
     if (!fs.existsSync(WA_AUTH_DIR)) {
-      fs.mkdirSync(WA_AUTH_DIR, { recursive: true });
+      fs.mkdirSync(WA_AUTH_DIR, { recursive: true, mode: 0o700 });
     }
 
     const baileys = await import('@whiskeysockets/baileys');

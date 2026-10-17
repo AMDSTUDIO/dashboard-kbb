@@ -258,10 +258,25 @@ export async function fetchClientNetworkInfo() {
 
 let resolvedApiBase = null;
 
+function getSessionActorHeaders() {
+  try {
+    const raw =
+      localStorage.getItem(STORAGE_SESSION_KEY) ||
+      sessionStorage.getItem(STORAGE_SESSION_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    return {
+      'X-KBB-Actor-Id': parsed.id || '',
+      'X-KBB-Actor-Role': parsed.isSuperAdmin || parsed.role === 'Superadmin' ? 'Superadmin' : (parsed.role || '')
+    };
+  } catch {
+    return {};
+  }
+}
+
 /**
  * Smart API Fetcher:
- * Tries same-origin `/api/*` first. If the VPS is serving static files via Nginx/Apache on port 8090
- * without a `/api/` proxy, automatically discovers `server.js` on port 3001 or 4173!
+ * Tries same-origin `/api/*` first with internal security headers.
  */
 async function apiFetchJson(endpoint, options = {}) {
   if (typeof window === 'undefined') return null;
@@ -274,6 +289,7 @@ async function apiFetchJson(endpoint, options = {}) {
     : ['', `${proto}//${host}:3001`, `${proto}//${host}:4173`, `http://${host}:3001`];
 
   const uniqueCandidates = Array.from(new Set(candidates));
+  const actorHeaders = getSessionActorHeaders();
 
   for (const base of uniqueCandidates) {
     try {
@@ -281,6 +297,8 @@ async function apiFetchJson(endpoint, options = {}) {
         ...options,
         headers: {
           'Content-Type': 'application/json',
+          'X-KBB-App-Key': 'kbb-bkpsdm-internal-2026',
+          ...actorHeaders,
           ...(options.headers || {})
         }
       });

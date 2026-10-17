@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
@@ -17,13 +18,53 @@ import {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const DATA_DIR = path.join(__dirname, 'data');
+function resolveWritableDataDir() {
+  const preferred = path.join(__dirname, 'data');
+  try {
+    if (!fs.existsSync(preferred)) {
+      fs.mkdirSync(preferred, { recursive: true, mode: 0o700 });
+    }
+    const testDir = path.join(preferred, '.perm-check');
+    fs.mkdirSync(testDir, { recursive: true, mode: 0o700 });
+    fs.rmSync(testDir, { recursive: true, force: true });
+    return preferred;
+  } catch {
+    const fallback = path.join(os.tmpdir(), 'dashboard-kbb-data');
+    if (!fs.existsSync(fallback)) {
+      fs.mkdirSync(fallback, { recursive: true, mode: 0o700 });
+    }
+    return fallback;
+  }
+}
+
+const DATA_DIR = resolveWritableDataDir();
 const DB_FILE = path.join(DATA_DIR, 'db.json');
 const MAX_LOGS = 500;
+const APP_CLIENT_KEY = 'kbb-bkpsdm-internal-2026';
+
+// In-memory IP rate limiter to prevent brute-force & Shodan/automated scanner abuse
+const rateLimitStore = new Map();
+
+function checkRateLimit(ip, bucket = 'api', maxRequests = 90, windowMs = 60000) {
+  const now = Date.now();
+  const key = `${bucket}:${ip || 'unknown'}`;
+  const entry = rateLimitStore.get(key);
+
+  if (!entry || now - entry.start > windowMs) {
+    rateLimitStore.set(key, { count: 1, start: now });
+    return true;
+  }
+
+  entry.count += 1;
+  if (entry.count > maxRequests) {
+    return false;
+  }
+  return true;
+}
 
 function ensureDbFile() {
   if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
+    fs.mkdirSync(DATA_DIR, { recursive: true, mode: 0o700 });
   }
   if (!fs.existsSync(DB_FILE)) {
     const initialData = {
@@ -31,7 +72,7 @@ function ensureDbFile() {
       logs: [],
       updatedAt: new Date().toISOString()
     };
-    fs.writeFileSync(DB_FILE, JSON.stringify(initialData, null, 2), 'utf-8');
+    fs.writeFileSync(DB_FILE, JSON.stringify(initialData, null, 2), { encoding: 'utf-8', mode: 0o600 });
   }
 }
 
@@ -59,7 +100,7 @@ export function writeDb(data) {
       logs: Array.isArray(data.logs) ? data.logs.slice(0, MAX_LOGS) : [],
       updatedAt: new Date().toISOString()
     };
-    fs.writeFileSync(DB_FILE, JSON.stringify(payload, null, 2), 'utf-8');
+    fs.writeFileSync(DB_FILE, JSON.stringify(payload, null, 2), { encoding: 'utf-8', mode: 0o600 });
     return payload;
   } catch (err) {
     console.error('Failed to write server db.json:', err);
@@ -91,10 +132,19 @@ function getRequestOrigin(req) {
 function parseJsonBody(req) {
   return new Promise((resolve) => {
     let body = '';
+    let aborted = false;
+    const maxBytes = 2 * 1024 * 1024; // 2 MB max payload
+
     req.on('data', (chunk) => {
+      if (aborted) return;
       body += chunk.toString();
+      if (body.length > maxBytes) {
+        aborted = true;
+        resolve({});
+      }
     });
     req.on('end', () => {
+      if (aborted) return;
       try {
         resolve(body ? JSON.parse(body) : {});
       } catch {
@@ -105,14 +155,35 @@ function parseJsonBody(req) {
   });
 }
 
-function sendJson(res, statusCode, payload) {
+function sendJson(res, statusCode, payload, reqOrigin = '*') {
   res.statusCode = statusCode;
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
   res.setHeader('Cache-Control', 'no-store');
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  res.setHeader('Access-Control-Allow-Origin', reqOrigin || '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader(
+    'Access-Control-Allow-Headers',
+    'Content-Type, Authorization, X-KBB-App-Key, X-KBB-Actor-Id, X-KBB-Actor-Role'
+  );
   res.end(JSON.stringify(payload));
+}
+
+function isAuthorizedSuperadmin(req, dbUsers = []) {
+  const actorId = req.headers['x-kbb-actor-id'] || '';
+  const actorRole = req.headers['x-kbb-actor-role'] || '';
+  const approvedSuperadmins = dbUsers.filter(
+    (u) => (u.isSuperAdmin || u.role === 'Superadmin') && u.status !== 'PENDING'
+  );
+  // If no Superadmin has been synced to server DB yet, allow initial Superadmin session
+  if (approvedSuperadmins.length === 0) {
+    return true;
+  }
+  if (actorId && approvedSuperadmins.some((u) => u.id === actorId)) {
+    return true;
+  }
+  return actorRole === 'Superadmin';
 }
 
 /**
@@ -125,17 +196,43 @@ export async function handleApiRequest(req, res, next) {
     return false;
   }
 
+  const reqOrigin = req.headers.origin || '*';
+
   if (req.method === 'OPTIONS') {
     res.statusCode = 204;
-    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Origin', reqOrigin);
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.setHeader(
+      'Access-Control-Allow-Headers',
+      'Content-Type, Authorization, X-KBB-App-Key, X-KBB-Actor-Id, X-KBB-Actor-Role'
+    );
     res.end();
     return true;
   }
 
   const clientIp = getClientIp(req);
   const originUrl = getRequestOrigin(req);
+
+  // Rate limit check per IP
+  const isWaEndpoint = url.startsWith('/api/wa/');
+  if (!checkRateLimit(clientIp, isWaEndpoint ? 'wa' : 'state', isWaEndpoint ? 30 : 120, 60000)) {
+    sendJson(res, 429, {
+      error: 'Terlalu banyak permintaan dari IP Anda. Silakan coba lagi setelah 1 menit.'
+    }, reqOrigin);
+    return true;
+  }
+
+  // Block direct Shodan / scanner / curl access that lacks the internal application header
+  // (Except /api/wa/webhook which is called externally by Fonnte/Wablas gateway)
+  if (url !== '/api/wa/webhook') {
+    const appKey = req.headers['x-kbb-app-key'];
+    if (appKey !== APP_CLIENT_KEY) {
+      sendJson(res, 401, {
+        error: 'Akses langsung ke endpoint API ditolak (Unauthorized).'
+      }, reqOrigin);
+      return true;
+    }
+  }
 
   // =========================================================================
   // 1. STATE SYNC ENDPOINTS (/api/state)
@@ -148,18 +245,19 @@ export async function handleApiRequest(req, res, next) {
       users: db.users,
       logs: db.logs,
       updatedAt: db.updatedAt
-    });
+    }, reqOrigin);
     return true;
   }
 
   if (url === '/api/state' && req.method === 'POST') {
     const body = await parseJsonBody(req);
     const db = readDb();
+    const canReplace = isAuthorizedSuperadmin(req, db.users);
 
     let nextUsers = db.users;
     let nextLogs = db.logs;
 
-    if (body.replaceUsers && Array.isArray(body.users)) {
+    if (body.replaceUsers && canReplace && Array.isArray(body.users)) {
       nextUsers = body.users;
     } else if (Array.isArray(body.users) && body.users.length > 0) {
       const mapById = new Map(db.users.map((u) => [u.id, u]));
@@ -176,7 +274,11 @@ export async function handleApiRequest(req, res, next) {
           const inTime = new Date(incoming.updatedAt || incoming.lastLoginAt || 0).getTime();
           const exTime = new Date(existing.updatedAt || existing.lastLoginAt || 0).getTime();
           if (inTime >= exTime) {
-            mapById.set(incoming.id, { ...existing, ...incoming });
+            mapById.set(incoming.id, {
+              ...existing,
+              ...incoming,
+              password: incoming.password || existing.password
+            });
           }
         }
       });
@@ -184,7 +286,7 @@ export async function handleApiRequest(req, res, next) {
       nextUsers = Array.from(mapById.values());
     }
 
-    if (body.replaceLogs && Array.isArray(body.logs)) {
+    if (body.replaceLogs && canReplace && Array.isArray(body.logs)) {
       nextLogs = body.logs.slice(0, MAX_LOGS);
     } else if (Array.isArray(body.logs) && body.logs.length > 0) {
       const logMap = new Map();
@@ -205,20 +307,30 @@ export async function handleApiRequest(req, res, next) {
       users: saved.users,
       logs: saved.logs,
       updatedAt: saved.updatedAt
-    });
+    }, reqOrigin);
     return true;
   }
 
   // =========================================================================
   // 2. WHATSAPP SERVER AUTOMATION ENDPOINTS (/api/wa/*)
   // =========================================================================
+  const adminOnlyWaRoutes = ['/api/wa/status', '/api/wa/config', '/api/wa/connect', '/api/wa/disconnect', '/api/wa/test'];
+  if (adminOnlyWaRoutes.includes(url)) {
+    const db = readDb();
+    if (!isAuthorizedSuperadmin(req, db.users)) {
+      sendJson(res, 403, {
+        error: 'Akses ditolak. Hanya Superadmin yang diizinkan mengelola WhatsApp Server.'
+      }, reqOrigin);
+      return true;
+    }
+  }
 
   // GET /api/wa/status -> Get connection state, QR code, and WA config
   if (url === '/api/wa/status' && req.method === 'GET') {
     sendJson(res, 200, {
       success: true,
       ...getWaStatus()
-    });
+    }, reqOrigin);
     return true;
   }
 
@@ -230,7 +342,7 @@ export async function handleApiRequest(req, res, next) {
       success: true,
       config: updated,
       ...getWaStatus()
-    });
+    }, reqOrigin);
     return true;
   }
 

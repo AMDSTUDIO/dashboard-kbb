@@ -20,13 +20,34 @@ const MIME_TYPES = {
   '.ico': 'image/x-icon'
 };
 
+function applySecurityHeaders(res) {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+}
+
 async function requestHandler(req, res) {
+  applySecurityHeaders(res);
+
   // 1. Handle /api/* endpoints for centralized account, activity log & WhatsApp Server
   const handled = await handleApiRequest(req, res);
   if (handled) return;
 
-  // 2. Serve built static files from dist/
-  const cleanUrl = (req.url || '/').split('?')[0];
+  // 2. Block hidden or sensitive files from direct probing (Shodan / scanners)
+  const cleanUrl = decodeURIComponent((req.url || '/').split('?')[0]);
+  if (
+    cleanUrl.includes('..') ||
+    /\/\.(env|git|svn|htaccess|user\.ini)/i.test(cleanUrl) ||
+    /^\/(server|package\.json|package-lock\.json|vite\.config\.js)/i.test(cleanUrl)
+  ) {
+    res.statusCode = 403;
+    res.end('Forbidden');
+    return;
+  }
+
+  // 3. Serve built static files from dist/
   let filePath = path.join(DIST_DIR, cleanUrl === '/' ? 'index.html' : cleanUrl);
 
   // Prevent directory traversal
@@ -47,23 +68,27 @@ async function requestHandler(req, res) {
     fs.createReadStream(filePath).pipe(res);
   } else {
     res.statusCode = 404;
-    res.end('Build folder (dist/) not found. Please run "npm run build" first.');
+    res.end('Not Found');
   }
 }
 
 function tryListenOnPort(port, isPrimary = false) {
   const srv = http.createServer(requestHandler);
+  // Primary port (8090) listens on 0.0.0.0 if not behind Nginx;
+  // Fallback internal proxy ports (3001, 4173) bind ONLY to 127.0.0.1 so Shodan cannot scan them externally
+  const bindHost = isPrimary ? (process.env.HOST || '0.0.0.0') : (process.env.API_HOST || '127.0.0.1');
+
   srv.on('error', (err) => {
     if (err.code === 'EADDRINUSE') {
       if (isPrimary) {
-        console.log(`[Info] Port ${port} sedang digunakan oleh web server lain (mis. Nginx/Apache). API Server tetap aktif pada port cadangan.`);
+        console.log(`[Info] Port ${port} sedang digunakan oleh web server depan (Nginx). API Server dikunci aman pada localhost (127.0.0.1).`);
       }
     } else {
       console.error(`Server error on port ${port}:`, err.message);
     }
   });
-  srv.listen(port, '0.0.0.0', () => {
-    console.log(`✅ Dashboard KBB & WhatsApp Server aktif di http://0.0.0.0:${port}`);
+  srv.listen(port, bindHost, () => {
+    console.log(`✅ Dashboard KBB & WhatsApp Server aktif di http://${bindHost}:${port}`);
   });
 }
 
