@@ -1,8 +1,9 @@
-// Service to manage authentication, session storage, RBAC (Superadmin), account approval workflow, and user activity logs for KBB Executive Dashboard
+// Service to manage authentication, session storage, RBAC (Superadmin), account approval workflow, and user activity logs (with IP, Location & Device detection) for KBB Executive Dashboard
 
 const STORAGE_SESSION_KEY = 'kbb_dashboard_auth';
 const STORAGE_USERS_KEY = 'kbb_dashboard_users_v3';
 const STORAGE_LOGS_KEY = 'kbb_dashboard_activity_logs';
+const STORAGE_NET_INFO_KEY = 'kbb_dashboard_net_info';
 const MAX_LOGS_COUNT = 500;
 
 // Legacy storage keys to clean up old built-in/demo accounts
@@ -11,27 +12,216 @@ const LEGACY_KEYS_TO_REMOVE = [
   'kbb_dashboard_superadmin'
 ];
 
+let cachedNetworkInfo = null;
+let networkFetchPromise = null;
+
 /**
- * Helper to detect browser & OS info from userAgent
+ * Helper to detect detailed device type, OS, browser, and screen info from userAgent
  */
 function getDeviceInfo() {
   if (typeof navigator === 'undefined') return 'Unknown Device';
   const ua = navigator.userAgent || '';
 
-  let browser = 'Browser';
-  if (ua.includes('Edg/')) browser = 'Edge';
-  else if (ua.includes('Chrome/') && !ua.includes('Edg/')) browser = 'Chrome';
-  else if (ua.includes('Firefox/')) browser = 'Firefox';
-  else if (ua.includes('Safari/') && !ua.includes('Chrome/')) browser = 'Safari';
+  // 1. Device Type & Model Hint
+  let deviceType = 'Desktop / PC';
+  if (/iPad|Tablet|PlayBook|Silk/i.test(ua) || (ua.includes('Macintosh') && navigator.maxTouchPoints > 1)) {
+    deviceType = 'Tablet (iPad/Android)';
+  } else if (/Mobile|Android|iP(hone|od)|IEMobile|BlackBerry|Kindle|Opera Mini/i.test(ua)) {
+    deviceType = 'Smartphone (Mobile)';
+  }
 
+  // Extract specific phone/device model on Android or iOS if available
+  let modelHint = '';
+  if (ua.includes('iPhone')) modelHint = 'iPhone';
+  else if (ua.includes('iPad')) modelHint = 'iPad';
+  else if (ua.includes('Macintosh')) modelHint = 'Mac';
+  else if (ua.includes('Android')) {
+    const match = ua.match(/Android\s+[\d.]+;\s*([^;)]+)/i);
+    if (match && match[1]) {
+      const cleanedModel = match[1].replace(/Build\/.*$/i, '').trim();
+      if (cleanedModel && cleanedModel !== 'K') {
+        modelHint = cleanedModel;
+      }
+    }
+  }
+
+  // 2. Operating System + Version
   let os = 'OS';
-  if (ua.includes('Windows')) os = 'Windows';
-  else if (ua.includes('Android')) os = 'Android';
-  else if (ua.includes('iPhone') || ua.includes('iPad')) os = 'iOS';
-  else if (ua.includes('Mac OS X')) os = 'macOS';
-  else if (ua.includes('Linux')) os = 'Linux';
+  if (ua.includes('Windows NT 10.0')) os = 'Windows 10/11';
+  else if (ua.includes('Windows NT 6.3')) os = 'Windows 8.1';
+  else if (ua.includes('Windows NT 6.1')) os = 'Windows 7';
+  else if (ua.includes('Windows')) os = 'Windows';
+  else if (ua.includes('Android')) {
+    const ver = ua.match(/Android\s+([\d.]+)/i);
+    os = ver ? `Android ${ver[1]}` : 'Android';
+  } else if (ua.includes('iPhone') || ua.includes('iPad')) {
+    const ver = ua.match(/OS\s+([\d_]+)/i);
+    os = ver ? `iOS ${ver[1].replace(/_/g, '.')}` : 'iOS';
+  } else if (ua.includes('Mac OS X')) {
+    os = 'macOS';
+  } else if (ua.includes('Linux')) {
+    os = 'Linux';
+  }
 
-  return `${browser} • ${os}`;
+  // 3. Browser + Major Version
+  let browser = 'Browser';
+  const edgeMatch = ua.match(/Edg\/(\d+)/);
+  const chromeMatch = ua.match(/Chrome\/(\d+)/);
+  const firefoxMatch = ua.match(/Firefox\/(\d+)/);
+  const safariMatch = ua.match(/Version\/(\d+).*Safari/);
+
+  if (edgeMatch) browser = `Edge ${edgeMatch[1]}`;
+  else if (chromeMatch) browser = `Chrome ${chromeMatch[1]}`;
+  else if (firefoxMatch) browser = `Firefox ${firefoxMatch[1]}`;
+  else if (safariMatch) browser = `Safari ${safariMatch[1]}`;
+
+  const modelPart = modelHint ? ` (${modelHint})` : '';
+  return `${deviceType}${modelPart} • ${os} • ${browser}`;
+}
+
+/**
+ * Retrieve cached IP & Geolocation info from memory or sessionStorage
+ */
+function getCachedNetworkInfo() {
+  if (cachedNetworkInfo) return cachedNetworkInfo;
+  try {
+    const raw = sessionStorage.getItem(STORAGE_NET_INFO_KEY);
+    if (raw) {
+      cachedNetworkInfo = JSON.parse(raw);
+      return cachedNetworkInfo;
+    }
+  } catch {
+    // ignore storage errors
+  }
+  return null;
+}
+
+/**
+ * Fetch public IP address, City/Region/Country location, and ISP asynchronously with multi-provider fallback
+ */
+export async function fetchClientNetworkInfo() {
+  const existing = getCachedNetworkInfo();
+  if (existing && existing.ip && existing.ip !== 'Mendeteksi...') {
+    return existing;
+  }
+
+  if (networkFetchPromise) return networkFetchPromise;
+
+  networkFetchPromise = (async () => {
+    let result = null;
+
+    // Provider 1: ipwho.is (HTTPS, no key, fast)
+    try {
+      const res = await fetch('https://ipwho.is/', { cache: 'no-store' });
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.success !== false && data.ip) {
+          const locParts = [data.city, data.region, data.country].filter(Boolean);
+          result = {
+            ip: data.ip,
+            location: locParts.join(', ') || 'Lokasi Terdeteksi',
+            isp: data.connection?.isp || data.connection?.org || '',
+            latitude: data.latitude,
+            longitude: data.longitude
+          };
+        }
+      }
+    } catch {
+      // Fallback to next provider
+    }
+
+    // Provider 2: ipapi.co/json
+    if (!result) {
+      try {
+        const res = await fetch('https://ipapi.co/json/', { cache: 'no-store' });
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.ip) {
+            const locParts = [data.city, data.region, data.country_name].filter(Boolean);
+            result = {
+              ip: data.ip,
+              location: locParts.join(', ') || 'Lokasi Terdeteksi',
+              isp: data.org || '',
+              latitude: data.latitude,
+              longitude: data.longitude
+            };
+          }
+        }
+      } catch {
+        // Fallback to next provider
+      }
+    }
+
+    // Provider 3: api.ipify.org (IP only fallback)
+    if (!result) {
+      try {
+        const res = await fetch('https://api.ipify.org?format=json', { cache: 'no-store' });
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.ip) {
+            result = {
+              ip: data.ip,
+              location: 'Indonesia (Jaringan Lokal)',
+              isp: ''
+            };
+          }
+        }
+      } catch {
+        // Offline or blocked
+      }
+    }
+
+    if (!result) {
+      result = {
+        ip: 'Lokal / Offline',
+        location: 'Jaringan Internal',
+        isp: ''
+      };
+    }
+
+    cachedNetworkInfo = result;
+    try {
+      sessionStorage.setItem(STORAGE_NET_INFO_KEY, JSON.stringify(result));
+    } catch {
+      // ignore
+    }
+
+    // Backfill any recent log entries that still had placeholder IP/location
+    try {
+      const rawLogs = localStorage.getItem(STORAGE_LOGS_KEY);
+      if (rawLogs) {
+        const parsedLogs = JSON.parse(rawLogs);
+        let changed = false;
+        const updated = parsedLogs.map((item) => {
+          if (!item.ipAddress || item.ipAddress === 'Mendeteksi...' || item.ipAddress === '-') {
+            changed = true;
+            return {
+              ...item,
+              ipAddress: result.ip,
+              location: result.location,
+              isp: result.isp || item.isp || ''
+            };
+          }
+          return item;
+        });
+        if (changed) {
+          localStorage.setItem(STORAGE_LOGS_KEY, JSON.stringify(updated));
+        }
+      }
+    } catch {
+      // ignore
+    }
+
+    networkFetchPromise = null;
+    return result;
+  })();
+
+  return networkFetchPromise;
+}
+
+// Kick off network info detection immediately on module load
+if (typeof window !== 'undefined') {
+  fetchClientNetworkInfo();
 }
 
 function cleanupLegacyStorage() {
@@ -129,7 +319,7 @@ export const authService = {
   },
 
   /**
-   * Record an activity log entry
+   * Record an activity log entry with IP address, Location, and Device Info
    */
   logActivity: ({ user, category = 'AUTH', action, description, metadata = {} }) => {
     try {
@@ -146,6 +336,8 @@ export const authService = {
         avatar: '??'
       };
 
+      const netInfo = getCachedNetworkInfo();
+
       const newEntry = {
         id: `log_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
         timestamp: new Date().toISOString(),
@@ -160,11 +352,20 @@ export const authService = {
         action,
         description,
         deviceInfo: getDeviceInfo(),
+        ipAddress: netInfo?.ip || 'Mendeteksi...',
+        location: netInfo?.location || 'Mendeteksi lokasi...',
+        isp: netInfo?.isp || '',
         metadata
       };
 
       const updatedLogs = [newEntry, ...logs].slice(0, MAX_LOGS_COUNT);
       localStorage.setItem(STORAGE_LOGS_KEY, JSON.stringify(updatedLogs));
+
+      // If network info wasn't cached yet, trigger fetch which will auto-backfill this log entry
+      if (!netInfo) {
+        fetchClientNetworkInfo();
+      }
+
       return newEntry;
     } catch (e) {
       console.error('Failed to record activity log', e);
@@ -537,7 +738,11 @@ export const authService = {
    * Perform strict login against registered & approved users only
    */
   login: async (identifier, password, rememberMe = true) => {
-    await new Promise((resolve) => setTimeout(resolve, 400));
+    // Ensure network info (IP & Location) is ready before recording login log
+    await Promise.race([
+      fetchClientNetworkInfo(),
+      new Promise((resolve) => setTimeout(resolve, 600))
+    ]);
 
     const cleanId = (identifier || '').trim().toLowerCase();
 
@@ -592,12 +797,16 @@ export const authService = {
     }
 
     const nowIso = new Date().toISOString();
+    const netInfo = getCachedNetworkInfo();
 
     const idx = allUsers.findIndex((u) => u.id === user.id);
     if (idx !== -1) {
       allUsers[idx] = {
         ...allUsers[idx],
         lastLoginAt: nowIso,
+        lastIp: netInfo?.ip || '-',
+        lastLocation: netInfo?.location || '-',
+        lastDevice: getDeviceInfo(),
         loginCount: (allUsers[idx].loginCount || 0) + 1
       };
       localStorage.setItem(STORAGE_USERS_KEY, JSON.stringify(allUsers));

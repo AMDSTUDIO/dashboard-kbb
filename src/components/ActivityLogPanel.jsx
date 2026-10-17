@@ -18,9 +18,11 @@ import {
   Eye,
   Database,
   LayoutDashboard,
-  X
+  X,
+  Globe,
+  MapPin
 } from 'lucide-react';
-import { authService } from '../services/authService';
+import { authService, fetchClientNetworkInfo } from '../services/authService';
 
 const ACTION_CONFIG = {
   LOGIN_SUCCESS: {
@@ -177,6 +179,9 @@ export default function ActivityLogPanel({
 
   useEffect(() => {
     loadAuditData();
+    fetchClientNetworkInfo().then(() => {
+      loadAuditData();
+    });
   }, []);
 
   useEffect(() => {
@@ -207,7 +212,10 @@ export default function ActivityLogPanel({
         totalActivities: userLogs.length,
         loginCount: Math.max(u.loginCount || 0, loginSuccessCount),
         lastLoginAt: u.lastLoginAt || lastLoginLog?.timestamp || null,
-        lastActivityAt: lastActivityLog?.timestamp || u.lastLoginAt || null
+        lastActivityAt: lastActivityLog?.timestamp || u.lastLoginAt || null,
+        lastIp: u.lastIp || lastActivityLog?.ipAddress || lastLoginLog?.ipAddress || '-',
+        lastLocation: u.lastLocation || lastActivityLog?.location || lastLoginLog?.location || '-',
+        lastDevice: u.lastDevice || lastActivityLog?.deviceInfo || lastLoginLog?.deviceInfo || '-'
       };
     });
   }, [users, logs]);
@@ -247,7 +255,9 @@ export default function ActivityLogPanel({
         const inNip = (log.userNip || '').toLowerCase().includes(q);
         const inDesc = (log.description || '').toLowerCase().includes(q);
         const inDevice = (log.deviceInfo || '').toLowerCase().includes(q);
-        if (!inName && !inUser && !inNip && !inDesc && !inDevice) return false;
+        const inIp = (log.ipAddress || '').toLowerCase().includes(q);
+        const inLoc = (log.location || '').toLowerCase().includes(q);
+        if (!inName && !inUser && !inNip && !inDesc && !inDevice && !inIp && !inLoc) return false;
       }
 
       return true;
@@ -518,6 +528,17 @@ export default function ActivityLogPanel({
                       {formatRelativeTime(acc.lastLoginAt)}
                     </strong>
                   </div>
+                  <div style={{ gridColumn: '1 / -1', marginTop: '2px', color: '#94a3b8', display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                      <Globe style={{ width: '12px', height: '12px', color: '#38bdf8', flexShrink: 0 }} />
+                      <span style={{ fontFamily: 'monospace', color: '#38bdf8' }}>{acc.lastIp}</span>
+                      <span>• {acc.lastLocation}</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#64748b', fontSize: '0.68rem' }}>
+                      <Monitor style={{ width: '12px', height: '12px', flexShrink: 0 }} />
+                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{acc.lastDevice}</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             );
@@ -677,7 +698,10 @@ export default function ActivityLogPanel({
                     RINCIAN AKTIVITAS
                   </th>
                   <th style={{ textAlign: 'left', padding: '12px 14px', fontSize: '0.75rem', color: '#94a3b8' }}>
-                    PERANGKAT
+                    IP & LOKASI
+                  </th>
+                  <th style={{ textAlign: 'left', padding: '12px 14px', fontSize: '0.75rem', color: '#94a3b8' }}>
+                    PERANGKAT & BROWSER
                   </th>
                 </tr>
               </thead>
@@ -762,14 +786,26 @@ export default function ActivityLogPanel({
                         </span>
                       </td>
 
-                      <td style={{ padding: '12px 14px', color: '#cbd5e1', maxWidth: '420px' }}>
+                      <td style={{ padding: '12px 14px', color: '#cbd5e1', maxWidth: '340px' }}>
                         {log.description}
                       </td>
 
-                      <td style={{ padding: '12px 14px', whiteSpace: 'nowrap', color: '#94a3b8', fontSize: '0.75rem' }}>
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
-                          <Monitor style={{ width: '13px', height: '13px', color: '#64748b' }} />
-                          {log.deviceInfo || '-'}
+                      <td style={{ padding: '12px 14px', whiteSpace: 'nowrap', fontSize: '0.75rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#38bdf8', fontFamily: 'monospace', fontWeight: 700 }}>
+                          <Globe style={{ width: '12px', height: '12px', flexShrink: 0 }} />
+                          {log.ipAddress || '-'}
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#94a3b8', fontSize: '0.7rem', marginTop: '2px' }}>
+                          <MapPin style={{ width: '11px', height: '11px', color: '#64748b', flexShrink: 0 }} />
+                          <span>{log.location || '-'}</span>
+                          {log.isp ? <span style={{ color: '#64748b' }}>({log.isp})</span> : null}
+                        </div>
+                      </td>
+
+                      <td style={{ padding: '12px 14px', whiteSpace: 'nowrap', color: '#cbd5e1', fontSize: '0.75rem' }}>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                          <Monitor style={{ width: '13px', height: '13px', color: '#38bdf8', flexShrink: 0 }} />
+                          <span>{log.deviceInfo || '-'}</span>
                         </span>
                       </td>
                     </tr>
