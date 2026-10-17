@@ -28,27 +28,20 @@ export default function Navbar({
   employees = [],
   onSelectEmployee,
   onOpenMasterSearch,
-  onOpenAdminUserModal
+  onOpenAdminUserModal,
+  onOpenActivityLogModal
 }) {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const isSuperAdmin = authService.isSuperAdmin(currentUser);
   const pendingCount = isSuperAdmin ? authService.getPendingUsers().length : 0;
 
-  const baseTabs = [
+  const tabs = [
     { id: 'overview', label: 'Ringkasan Eksekutif', shortLabel: 'Ringkasan', icon: LayoutDashboard },
     { id: 'jabatan', label: 'Rekap Jabatan Fungsional', shortLabel: 'Rekap Jabatan', icon: Users },
     { id: 'pensiun', label: 'Proyeksi Pensiun BUP', shortLabel: 'Pensiun BUP', icon: CalendarX },
     { id: 'promotion', label: 'Proyeksi Naik Jenjang', shortLabel: 'Naik Jenjang', icon: TrendingUp },
     { id: 'master', label: 'Master Data Pegawai', shortLabel: 'Master Data', icon: Database },
   ];
-
-  // Append dedicated Activity Log tab exclusively for Superadmin
-  const tabs = isSuperAdmin
-    ? [
-        ...baseTabs,
-        { id: 'activity_logs', label: 'Log Aktivitas & Audit', shortLabel: 'Log Aktivitas', icon: Activity, isSuperOnly: true }
-      ]
-    : baseTabs;
 
   const formattedTime = lastSynced ? new Date(lastSynced).toLocaleTimeString('id-ID', {
     hour: '2-digit',
@@ -119,41 +112,61 @@ export default function Navbar({
                 </div>
               )}
 
-              {/* Superadmin Only Action: Manage & Create User Accounts */}
+              {/* Superadmin Only Actions: Kelola Akun & Log Aktivitas side-by-side */}
               {isSuperAdmin && (
-                <button
-                  onClick={onOpenAdminUserModal}
-                  className="btn-secondary"
-                  style={{
-                    padding: '5px 10px',
-                    background: 'rgba(245, 158, 11, 0.14)',
-                    borderColor: 'rgba(245, 158, 11, 0.38)',
-                    color: '#fbbf24',
-                    borderRadius: '8px',
-                    fontSize: '0.75rem',
-                    fontWeight: 700,
-                    position: 'relative'
-                  }}
-                  title="Kelola & Setujui Akun Pengguna (Khusus Superadmin)"
-                >
-                  <UserPlus style={{ width: '14px', height: '14px' }} />
-                  <span>Kelola Akun</span>
-                  {pendingCount > 0 && (
-                    <span
-                      style={{
-                        background: '#f43f5e',
-                        color: '#ffffff',
-                        fontSize: '0.65rem',
-                        fontWeight: 800,
-                        padding: '1px 6px',
-                        borderRadius: '999px',
-                        marginLeft: '2px'
-                      }}
-                    >
-                      {pendingCount}
-                    </span>
-                  )}
-                </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <button
+                    onClick={onOpenAdminUserModal}
+                    className="btn-secondary"
+                    style={{
+                      padding: '5px 10px',
+                      background: 'rgba(245, 158, 11, 0.14)',
+                      borderColor: 'rgba(245, 158, 11, 0.38)',
+                      color: '#fbbf24',
+                      borderRadius: '8px',
+                      fontSize: '0.75rem',
+                      fontWeight: 700,
+                      position: 'relative'
+                    }}
+                    title="Kelola & Setujui Akun Pengguna (Khusus Superadmin)"
+                  >
+                    <UserPlus style={{ width: '14px', height: '14px' }} />
+                    <span>Kelola Akun</span>
+                    {pendingCount > 0 && (
+                      <span
+                        style={{
+                          background: '#f43f5e',
+                          color: '#ffffff',
+                          fontSize: '0.65rem',
+                          fontWeight: 800,
+                          padding: '1px 6px',
+                          borderRadius: '999px',
+                          marginLeft: '2px'
+                        }}
+                      >
+                        {pendingCount}
+                      </span>
+                    )}
+                  </button>
+
+                  <button
+                    onClick={onOpenActivityLogModal}
+                    className="btn-secondary"
+                    style={{
+                      padding: '5px 10px',
+                      background: 'rgba(56, 189, 248, 0.12)',
+                      borderColor: 'rgba(56, 189, 248, 0.35)',
+                      color: '#38bdf8',
+                      borderRadius: '8px',
+                      fontSize: '0.75rem',
+                      fontWeight: 700
+                    }}
+                    title="Pantau Log Aktivitas & Riwayat Login Akun (Khusus Superadmin)"
+                  >
+                    <Activity style={{ width: '14px', height: '14px' }} />
+                    <span>Log Aktivitas</span>
+                  </button>
+                </div>
               )}
 
               {/* Live Refresh Button */}
@@ -266,16 +279,44 @@ export default function Navbar({
                   <RefreshCw className={isSyncing ? 'spin-icon' : ''} style={{ width: '13px', height: '13px' }} />
                 </button>
 
-                {/* Superadmin Only Add/Manage User Button */}
+                {/* Superadmin Only Buttons on Mobile: Kelola Akun & Log Aktivitas */}
                 {isSuperAdmin && (
-                  <button
-                    onClick={onOpenAdminUserModal}
-                    className="btn-secondary"
-                    style={{ padding: '5px 8px', borderRadius: '6px', color: '#fbbf24', borderColor: 'rgba(245, 158, 11, 0.35)' }}
-                    title="Kelola Akun (Superadmin)"
-                  >
-                    <UserPlus style={{ width: '13px', height: '13px' }} />
-                  </button>
+                  <>
+                    <button
+                      onClick={onOpenAdminUserModal}
+                      className="btn-secondary"
+                      style={{ padding: '5px 8px', borderRadius: '6px', color: '#fbbf24', borderColor: 'rgba(245, 158, 11, 0.35)', position: 'relative' }}
+                      title="Kelola Akun (Superadmin)"
+                    >
+                      <UserPlus style={{ width: '13px', height: '13px' }} />
+                      {pendingCount > 0 && (
+                        <span
+                          style={{
+                            position: 'absolute',
+                            top: '-5px',
+                            right: '-5px',
+                            background: '#f43f5e',
+                            color: '#ffffff',
+                            fontSize: '0.58rem',
+                            fontWeight: 800,
+                            padding: '0 4px',
+                            borderRadius: '999px'
+                          }}
+                        >
+                          {pendingCount}
+                        </span>
+                      )}
+                    </button>
+
+                    <button
+                      onClick={onOpenActivityLogModal}
+                      className="btn-secondary"
+                      style={{ padding: '5px 8px', borderRadius: '6px', color: '#38bdf8', borderColor: 'rgba(56, 189, 248, 0.35)' }}
+                      title="Log Aktivitas (Superadmin)"
+                    >
+                      <Activity style={{ width: '13px', height: '13px' }} />
+                    </button>
+                  </>
                 )}
 
                 {/* Mobile User Avatar & Logout Trigger */}
@@ -317,22 +358,13 @@ export default function Navbar({
                 {tabs.map((tab) => {
                   const Icon = tab.icon;
                   const isActive = activeTab === tab.id;
-                  const activeColor = tab.isSuperOnly ? '#fbbf24' : '#38bdf8';
                   return (
                     <button
                       key={tab.id}
                       onClick={() => setActiveTab(tab.id)}
                       className={`btn-tab ${isActive ? 'active' : ''}`}
-                      style={
-                        tab.isSuperOnly
-                          ? {
-                              borderColor: isActive ? 'rgba(245, 158, 11, 0.5)' : 'rgba(245, 158, 11, 0.2)',
-                              color: isActive ? '#fbbf24' : '#fcd34d'
-                            }
-                          : undefined
-                      }
                     >
-                      <Icon style={{ width: '14px', height: '14px', flexShrink: 0, color: isActive ? activeColor : (tab.isSuperOnly ? '#fbbf24' : '#94a3b8') }} />
+                      <Icon style={{ width: '14px', height: '14px', flexShrink: 0, color: isActive ? '#38bdf8' : '#94a3b8' }} />
                       <span className="desktop-tab-label">{tab.label}</span>
                       <span className="mobile-tab-label">{tab.shortLabel}</span>
                     </button>

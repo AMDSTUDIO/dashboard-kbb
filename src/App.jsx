@@ -42,6 +42,9 @@ export default function App() {
   // Superadmin User Management Modal state
   const [showAdminUserModal, setShowAdminUserModal] = useState(false);
 
+  // Superadmin Activity Log Modal state
+  const [showActivityLogModal, setShowActivityLogModal] = useState(false);
+
   // Optional filter when jumping from AdminUserModal to a specific account's log
   const [selectedLogAccountFilter, setSelectedLogAccountFilter] = useState(null);
 
@@ -80,7 +83,6 @@ export default function App() {
   }, [currentUser]);
 
   const handleChangeTab = (tabId) => {
-    if (tabId === 'activity_logs' && !isSuperAdmin) return;
     setActiveTab(tabId);
     if (currentUser && tabId !== activeTab) {
       authService.logActivity({
@@ -145,6 +147,12 @@ export default function App() {
         onOpenAdminUserModal={() => {
           if (isSuperAdmin) setShowAdminUserModal(true);
         }}
+        onOpenActivityLogModal={() => {
+          if (isSuperAdmin) {
+            setSelectedLogAccountFilter(null);
+            setShowActivityLogModal(true);
+          }
+        }}
       />
 
       {/* Superadmin User Management Modal */}
@@ -153,7 +161,7 @@ export default function App() {
           onClose={() => setShowAdminUserModal(false)}
           onViewAccountLogs={(username) => {
             setSelectedLogAccountFilter(username);
-            setActiveTab('activity_logs');
+            setShowActivityLogModal(true);
           }}
           onAccountDeleted={() => {
             setShowAdminUserModal(false);
@@ -162,17 +170,21 @@ export default function App() {
         />
       )}
 
+      {/* Superadmin Activity Log Modal */}
+      {showActivityLogModal && isSuperAdmin && (
+        <ActivityLogPanel
+          currentUser={currentUser}
+          selectedAccountFilter={selectedLogAccountFilter}
+          onSelectAccountFilter={setSelectedLogAccountFilter}
+          onOpenAdminUserModal={() => setShowAdminUserModal(true)}
+          onClose={() => setShowActivityLogModal(false)}
+        />
+      )}
+
       {/* Main Workspace Content */}
       <main className="main-content">
-        {/* TAB KHUSUS SUPERADMIN: Log Aktivitas & Audit (can be viewed even while sheet data loads) */}
-        {activeTab === 'activity_logs' && isSuperAdmin ? (
-          <ActivityLogPanel
-            currentUser={currentUser}
-            selectedAccountFilter={selectedLogAccountFilter}
-            onSelectAccountFilter={setSelectedLogAccountFilter}
-            onOpenAdminUserModal={() => setShowAdminUserModal(true)}
-          />
-        ) : isLoading ? (
+        {/* Loading Spinner */}
+        {isLoading ? (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '400px', gap: '16px' }}>
             <Loader2 className="spin-icon" style={{ width: '48px', height: '48px', color: '#38bdf8' }} />
             <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#ffffff' }}>

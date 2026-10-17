@@ -17,7 +17,8 @@ import {
   XCircle,
   Eye,
   Database,
-  LayoutDashboard
+  LayoutDashboard,
+  X
 } from 'lucide-react';
 import { authService } from '../services/authService';
 
@@ -159,7 +160,8 @@ export default function ActivityLogPanel({
   currentUser,
   selectedAccountFilter,
   onSelectAccountFilter,
-  onOpenAdminUserModal
+  onOpenAdminUserModal,
+  onClose
 }) {
   const [logs, setLogs] = useState([]);
   const [users, setUsers] = useState([]);
@@ -253,96 +255,108 @@ export default function ActivityLogPanel({
   }, [logs, categoryFilter, accountFilter, searchQuery]);
 
   if (!authService.isSuperAdmin(currentUser)) {
-    return (
-      <div className="glass-card" style={{ padding: '40px', textAlign: 'center', maxWidth: '560px', margin: '40px auto' }}>
-        <ShieldAlert style={{ width: '48px', height: '48px', color: '#f43f5e', marginBottom: '12px' }} />
-        <h3 style={{ color: '#ffffff', margin: '0 0 8px 0' }}>Akses Terbatas Khusus Superadmin</h3>
-        <p style={{ color: '#94a3b8', fontSize: '0.875rem', margin: 0 }}>
-          Halaman Log Aktivitas & Manajemen Audit hanya dapat diakses oleh akun dengan hak akses Superadmin.
-        </p>
-      </div>
-    );
+    return null;
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-      {/* Top Banner Header */}
+    <div className="modal-overlay" onClick={onClose}>
       <div
-        className="glass-card"
-        style={{
-          padding: '20px 24px',
-          display: 'flex',
-          flexWrap: 'wrap',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          gap: '16px',
-          background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(2, 132, 199, 0.15) 100%)',
-          border: '1px solid rgba(56, 189, 248, 0.3)'
-        }}
+        className="modal-content"
+        style={{ maxWidth: '1120px', width: '95vw', maxHeight: '88vh', display: 'flex', flexDirection: 'column' }}
+        onClick={(e) => e.stopPropagation()}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-          <div
-            style={{
-              width: '46px',
-              height: '46px',
-              borderRadius: '12px',
-              background: 'rgba(56, 189, 248, 0.15)',
-              border: '1px solid rgba(56, 189, 248, 0.35)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#38bdf8',
-              flexShrink: 0
-            }}
-          >
-            <Activity style={{ width: '24px', height: '24px' }} />
-          </div>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
-                Log Aktivitas & Audit Akun
-              </h2>
-              <span
-                className="badge"
-                style={{
-                  background: 'rgba(245, 158, 11, 0.18)',
-                  color: '#fbbf24',
-                  border: '1px solid rgba(245, 158, 11, 0.4)',
-                  fontSize: '0.68rem',
-                  fontWeight: 800
-                }}
-              >
-                KHUSUS SUPERADMIN
-              </span>
+        {/* Top Modal Header */}
+        <div
+          style={{
+            padding: '16px 22px',
+            display: 'flex',
+            flexWrap: 'wrap',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            gap: '14px',
+            background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(2, 132, 199, 0.18) 100%)',
+            borderBottom: '1px solid rgba(56, 189, 248, 0.25)'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div
+              style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: '10px',
+                background: 'rgba(56, 189, 248, 0.15)',
+                border: '1px solid rgba(56, 189, 248, 0.35)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#38bdf8',
+                flexShrink: 0
+              }}
+            >
+              <Activity style={{ width: '20px', height: '20px' }} />
             </div>
-            <p style={{ fontSize: '0.825rem', color: '#94a3b8', margin: '4px 0 0 0' }}>
-              Pantau riwayat login, aktivitas navigasi & data, serta manajemen seluruh akun pengguna/admin secara real-time.
-            </p>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                <h2 style={{ fontSize: 'clamp(1rem, 3.5vw, 1.2rem)', fontWeight: 800, color: '#ffffff', margin: 0 }}>
+                  Log Aktivitas & Audit Akun
+                </h2>
+                <span
+                  className="badge"
+                  style={{
+                    background: 'rgba(245, 158, 11, 0.18)',
+                    color: '#fbbf24',
+                    border: '1px solid rgba(245, 158, 11, 0.4)',
+                    fontSize: '0.65rem',
+                    fontWeight: 800
+                  }}
+                >
+                  KHUSUS SUPERADMIN
+                </span>
+              </div>
+              <p style={{ fontSize: '0.76rem', color: '#94a3b8', margin: '2px 0 0 0' }}>
+                Pantau riwayat login, aktivitas navigasi & data, serta manajemen seluruh akun pengguna/admin.
+              </p>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            <button
+              onClick={loadAuditData}
+              className="btn-secondary"
+              style={{ padding: '7px 12px', fontSize: '0.76rem', borderRadius: '8px' }}
+            >
+              <RefreshCw style={{ width: '14px', height: '14px' }} />
+              Muat Ulang
+            </button>
+
+            <button
+              onClick={() => {
+                if (onClose) onClose();
+                if (onOpenAdminUserModal) onOpenAdminUserModal();
+              }}
+              className="btn-primary"
+              style={{ padding: '7px 14px', fontSize: '0.76rem', borderRadius: '8px' }}
+            >
+              <UserPlus style={{ width: '14px', height: '14px' }} />
+              Kelola Akun
+            </button>
+
+            {onClose && (
+              <button
+                onClick={onClose}
+                className="btn-secondary"
+                style={{ padding: '6px', borderRadius: '50%', border: 'none', flexShrink: 0 }}
+                title="Tutup Log Aktivitas"
+              >
+                <X style={{ width: '18px', height: '18px' }} />
+              </button>
+            )}
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-          <button
-            onClick={loadAuditData}
-            className="btn-secondary"
-            style={{ padding: '8px 14px', fontSize: '0.8rem', borderRadius: '10px' }}
-          >
-            <RefreshCw style={{ width: '15px', height: '15px' }} />
-            Muat Ulang Log
-          </button>
-
-          <button
-            onClick={onOpenAdminUserModal}
-            className="btn-primary"
-            style={{ padding: '8px 16px', fontSize: '0.8rem', borderRadius: '10px' }}
-          >
-            <UserPlus style={{ width: '15px', height: '15px' }} />
-            Kelola / Buat Akun
-          </button>
-        </div>
-      </div>
-
-      {/* KPI Summary Row */}
+        {/* Scrollable Modal Body */}
+        <div style={{ padding: '20px 22px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '18px', flex: 1 }}>
+          {/* KPI Summary Row */}
       <div className="kpi-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '14px' }}>
         <div className="glass-card" style={{ padding: '16px 18px' }}>
           <div style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 600 }}>Total Aktivitas Tercatat</div>
@@ -812,6 +826,8 @@ export default function ActivityLogPanel({
           </div>
         </div>
       )}
+        </div>
+      </div>
     </div>
   );
 }
