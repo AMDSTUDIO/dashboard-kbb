@@ -9,9 +9,19 @@ import EmployeeTable from './components/EmployeeTable';
 import DrillDownModal from './components/DrillDownModal';
 import LoginPage from './components/LoginPage';
 import AdminUserModal from './components/AdminUserModal';
+import ActivityLogPanel from './components/ActivityLogPanel';
 import { fetchLiveKepegawaianData } from './services/sheetsService';
 import { authService } from './services/authService';
 import { Loader2, AlertCircle, Sparkles, X, Phone, Mail, MapPin, Building, ShieldCheck } from 'lucide-react';
+
+const TAB_LABELS = {
+  overview: 'Ringkasan Eksekutif',
+  jabatan: 'Rekap Jabatan Fungsional',
+  pensiun: 'Proyeksi Pensiun BUP',
+  promotion: 'Proyeksi Naik Jenjang',
+  master: 'Master Data Pegawai',
+  activity_logs: 'Log Aktivitas & Audit'
+};
 
 export default function App() {
   const [currentUser, setCurrentUser] = useState(() => authService.getCurrentUser());
@@ -29,10 +39,15 @@ export default function App() {
   // Single Employee Detail modal state
   const [selectedEmployeeDetail, setSelectedEmployeeDetail] = useState(null);
 
-  // Admin User Creation Modal state
+  // Superadmin User Management Modal state
   const [showAdminUserModal, setShowAdminUserModal] = useState(false);
 
-  const loadData = async () => {
+  // Optional filter when jumping from AdminUserModal to a specific account's log
+  const [selectedLogAccountFilter, setSelectedLogAccountFilter] = useState(null);
+
+  const isSuperAdmin = authService.isSuperAdmin(currentUser);
+
+  const loadData = async (isManualTrigger = false) => {
     setIsSyncing(true);
     setError(null);
     try {
@@ -40,6 +55,15 @@ export default function App() {
       setDataset(res.data);
       setLastSynced(res.lastSynced);
       setDataSource(res.source);
+
+      if (isManualTrigger && currentUser) {
+        authService.logActivity({
+          user: currentUser,
+          category: 'DATA',
+          action: 'SYNC_DATA',
+          description: `Melakukan sinkronisasi data kepegawaian (${(res.data?.stats?.totalPegawai || 0).toLocaleString('id-ID')} data pegawai).`
+        });
+      }
     } catch (err) {
       console.error('Failed to load data:', err);
       setError('Gagal memuat data dari Google Sheets. Pastikan koneksi internet aktif.');
@@ -51,13 +75,51 @@ export default function App() {
 
   useEffect(() => {
     if (currentUser) {
-      loadData();
+      loadData(false);
     }
   }, [currentUser]);
+
+  const handleChangeTab = (tabId) => {
+    if (tabId === 'activity_logs' && !isSuperAdmin) return;
+    setActiveTab(tabId);
+    if (currentUser && tabId !== activeTab) {
+      authService.logActivity({
+        user: currentUser,
+        category: 'NAVIGATION',
+        action: 'VIEW_TAB',
+        description: `Membuka halaman tab "${TAB_LABELS[tabId] || tabId}".`
+      });
+    }
+  };
+
+  const handleSelectEmployee = (emp) => {
+    setSelectedEmployeeDetail(emp);
+    if (currentUser && emp) {
+      authService.logActivity({
+        user: currentUser,
+        category: 'DATA',
+        action: 'VIEW_EMPLOYEE',
+        description: `Melihat detail profil pegawai: ${emp.nama} (NIP. ${emp.nip}).`
+      });
+    }
+  };
+
+  const handleSelectJabatan = (jabName) => {
+    setDrillDownJabatan(jabName);
+    if (currentUser && jabName) {
+      authService.logActivity({
+        user: currentUser,
+        category: 'DATA',
+        action: 'VIEW_JABATAN',
+        description: `Melihat rincian daftar pegawai pada jabatan: "${jabName}".`
+      });
+    }
+  };
 
   const handleLogout = () => {
     authService.logout();
     setCurrentUser(null);
+    setActiveTab('overview');
   };
 
   if (!currentUser) {
@@ -69,8 +131,8 @@ export default function App() {
       {/* Top Navigation */}
       <Navbar
         activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        onRefresh={loadData}
+        setActiveTab={handleChangeTab}
+        onRefresh={() => loadData(true)}
         isSyncing={isSyncing}
         lastSynced={lastSynced}
         source={dataSource}
@@ -78,21 +140,39 @@ export default function App() {
         currentUser={currentUser}
         onLogout={handleLogout}
         employees={dataset.employees}
-        onSelectEmployee={(emp) => setSelectedEmployeeDetail(emp)}
-        onOpenMasterSearch={() => setActiveTab('master')}
-        onOpenAdminUserModal={() => setShowAdminUserModal(true)}
+        onSelectEmployee={handleSelectEmployee}
+        onOpenMasterSearch={() => handleChangeTab('master')}
+        onOpenAdminUserModal={() => {
+          if (isSuperAdmin) setShowAdminUserModal(true);
+        }}
       />
 
-      {/* Admin User Management Modal */}
-      {showAdminUserModal && (
-        <AdminUserModal onClose={() => setShowAdminUserModal(false)} />
+      {/* Superadmin User Management Modal */}
+      {showAdminUserModal && isSuperAdmin && (
+        <AdminUserModal
+          onClose={() => setShowAdminUserModal(false)}
+          onViewAccountLogs={(username) => {
+            setSelectedLogAccountFilter(username);
+            setActiveTab('activity_logs');
+          }}
+          onAccountDeleted={() => {
+            setShowAdminUserModal(false);
+            handleLogout();
+          }}
+        />
       )}
 
       {/* Main Workspace Content */}
       <main className="main-content">
-        
-        {/* Loading Spinner */}
-        {isLoading ? (
+        {/* TAB KHUSUS SUPERADMIN: Log Aktivitas & Audit (can be viewed even while sheet data loads) */}
+        {activeTab === 'activity_logs' && isSuperAdmin ? (
+          <ActivityLogPanel
+            currentUser={currentUser}
+            selectedAccountFilter={selectedLogAccountFilter}
+            onSelectAccountFilter={setSelectedLogAccountFilter}
+            onOpenAdminUserModal={() => setShowAdminUserModal(true)}
+          />
+        ) : isLoading ? (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '400px', gap: '16px' }}>
             <Loader2 className="spin-icon" style={{ width: '48px', height: '48px', color: '#38bdf8' }} />
             <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#ffffff' }}>
@@ -107,7 +187,7 @@ export default function App() {
             <AlertCircle style={{ color: '#f43f5e', width: '48px', height: '48px', marginBottom: '16px' }} />
             <h3 style={{ fontSize: '1.25rem', color: '#ffffff', marginBottom: '8px' }}>Gagal Mengambil Data Live</h3>
             <p style={{ color: '#94a3b8', fontSize: '0.9rem', marginBottom: '20px' }}>{error}</p>
-            <button onClick={loadData} className="btn-primary">
+            <button onClick={() => loadData(true)} className="btn-primary">
               Coba Lagi Sekarang
             </button>
           </div>
@@ -121,7 +201,7 @@ export default function App() {
                 <JabatanRecap 
                   jabatanList={dataset.stats?.jabatanList}
                   stats={dataset.stats}
-                  onSelectJabatan={(jabName) => setDrillDownJabatan(jabName)}
+                  onSelectJabatan={handleSelectJabatan}
                 />
               </>
             )}
@@ -131,7 +211,7 @@ export default function App() {
               <JabatanRecap 
                 jabatanList={dataset.stats?.jabatanList}
                 stats={dataset.stats}
-                onSelectJabatan={(jabName) => setDrillDownJabatan(jabName)}
+                onSelectJabatan={handleSelectJabatan}
               />
             )}
 
@@ -140,7 +220,7 @@ export default function App() {
               <ProyeksiPensiun 
                 employees={dataset.employees}
                 stats={dataset.stats}
-                onSelectEmployee={(emp) => setSelectedEmployeeDetail(emp)}
+                onSelectEmployee={handleSelectEmployee}
               />
             )}
 
@@ -149,7 +229,7 @@ export default function App() {
               <ProyeksiNaikJenjang 
                 employees={dataset.employees}
                 stats={dataset.stats}
-                onSelectEmployee={(emp) => setSelectedEmployeeDetail(emp)}
+                onSelectEmployee={handleSelectEmployee}
               />
             )}
 
@@ -158,12 +238,11 @@ export default function App() {
               <EmployeeTable 
                 employees={dataset.employees}
                 stats={dataset.stats}
-                onSelectEmployee={(emp) => setSelectedEmployeeDetail(emp)}
+                onSelectEmployee={handleSelectEmployee}
               />
             )}
           </>
         )}
-
       </main>
 
       {/* Drill-down Modal per Jabatan */}

@@ -9,9 +9,11 @@ import {
   Database,
   Sparkles,
   LogOut,
-  UserPlus
+  UserPlus,
+  Activity
 } from 'lucide-react';
 import QuickSearch from './QuickSearch';
+import { authService } from '../services/authService';
 
 export default function Navbar({ 
   activeTab, 
@@ -29,14 +31,24 @@ export default function Navbar({
   onOpenAdminUserModal
 }) {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const isSuperAdmin = authService.isSuperAdmin(currentUser);
+  const pendingCount = isSuperAdmin ? authService.getPendingUsers().length : 0;
 
-  const tabs = [
+  const baseTabs = [
     { id: 'overview', label: 'Ringkasan Eksekutif', shortLabel: 'Ringkasan', icon: LayoutDashboard },
     { id: 'jabatan', label: 'Rekap Jabatan Fungsional', shortLabel: 'Rekap Jabatan', icon: Users },
     { id: 'pensiun', label: 'Proyeksi Pensiun BUP', shortLabel: 'Pensiun BUP', icon: CalendarX },
     { id: 'promotion', label: 'Proyeksi Naik Jenjang', shortLabel: 'Naik Jenjang', icon: TrendingUp },
     { id: 'master', label: 'Master Data Pegawai', shortLabel: 'Master Data', icon: Database },
   ];
+
+  // Append dedicated Activity Log tab exclusively for Superadmin
+  const tabs = isSuperAdmin
+    ? [
+        ...baseTabs,
+        { id: 'activity_logs', label: 'Log Aktivitas & Audit', shortLabel: 'Log Aktivitas', icon: Activity, isSuperOnly: true }
+      ]
+    : baseTabs;
 
   const formattedTime = lastSynced ? new Date(lastSynced).toLocaleTimeString('id-ID', {
     hour: '2-digit',
@@ -107,24 +119,40 @@ export default function Navbar({
                 </div>
               )}
 
-              {/* Admin Action: Create New Account */}
-              {currentUser && (
+              {/* Superadmin Only Action: Manage & Create User Accounts */}
+              {isSuperAdmin && (
                 <button
                   onClick={onOpenAdminUserModal}
                   className="btn-secondary"
                   style={{
                     padding: '5px 10px',
-                    background: 'rgba(56, 189, 248, 0.1)',
-                    borderColor: 'rgba(56, 189, 248, 0.3)',
-                    color: '#38bdf8',
+                    background: 'rgba(245, 158, 11, 0.14)',
+                    borderColor: 'rgba(245, 158, 11, 0.38)',
+                    color: '#fbbf24',
                     borderRadius: '8px',
                     fontSize: '0.75rem',
-                    fontWeight: 700
+                    fontWeight: 700,
+                    position: 'relative'
                   }}
-                  title="Kelola & Buat Akun Pengguna Manual"
+                  title="Kelola & Setujui Akun Pengguna (Khusus Superadmin)"
                 >
                   <UserPlus style={{ width: '14px', height: '14px' }} />
-                  <span>+ Akun</span>
+                  <span>Kelola Akun</span>
+                  {pendingCount > 0 && (
+                    <span
+                      style={{
+                        background: '#f43f5e',
+                        color: '#ffffff',
+                        fontSize: '0.65rem',
+                        fontWeight: 800,
+                        padding: '1px 6px',
+                        borderRadius: '999px',
+                        marginLeft: '2px'
+                      }}
+                    >
+                      {pendingCount}
+                    </span>
+                  )}
                 </button>
               )}
 
@@ -143,12 +171,12 @@ export default function Navbar({
               {/* Current User Profile Badge */}
               {currentUser && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', paddingLeft: '6px', borderLeft: '1px solid rgba(255, 255, 255, 0.1)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(255, 255, 255, 0.1)', padding: '3px 8px', borderRadius: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(15, 23, 42, 0.8)', border: isSuperAdmin ? '1px solid rgba(245, 158, 11, 0.35)' : '1px solid rgba(255, 255, 255, 0.1)', padding: '3px 8px', borderRadius: '8px' }}>
                     <div style={{ 
                       width: '24px', 
                       height: '24px', 
                       borderRadius: '50%', 
-                      background: '#0284c7', 
+                      background: isSuperAdmin ? 'linear-gradient(135deg, #f59e0b, #d97706)' : '#0284c7', 
                       color: '#ffffff', 
                       display: 'flex', 
                       alignItems: 'center', 
@@ -159,8 +187,11 @@ export default function Navbar({
                       {currentUser.avatar || 'US'}
                     </div>
                     <div style={{ textAlign: 'left', lineHeight: '1.1' }}>
-                      <div style={{ fontSize: '0.725rem', fontWeight: 700, color: '#ffffff', maxWidth: '100px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <div style={{ fontSize: '0.725rem', fontWeight: 700, color: '#ffffff', maxWidth: '115px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {currentUser.name}
+                      </div>
+                      <div style={{ fontSize: '0.62rem', color: isSuperAdmin ? '#fbbf24' : '#94a3b8', fontWeight: 600 }}>
+                        {currentUser.role}
                       </div>
                     </div>
                   </div>
@@ -235,13 +266,13 @@ export default function Navbar({
                   <RefreshCw className={isSyncing ? 'spin-icon' : ''} style={{ width: '13px', height: '13px' }} />
                 </button>
 
-                {/* Admin Add User Button */}
-                {currentUser && (
+                {/* Superadmin Only Add/Manage User Button */}
+                {isSuperAdmin && (
                   <button
                     onClick={onOpenAdminUserModal}
                     className="btn-secondary"
-                    style={{ padding: '5px 8px', borderRadius: '6px', color: '#38bdf8', borderColor: 'rgba(56,189,248,0.3)' }}
-                    title="Tambah Akun"
+                    style={{ padding: '5px 8px', borderRadius: '6px', color: '#fbbf24', borderColor: 'rgba(245, 158, 11, 0.35)' }}
+                    title="Kelola Akun (Superadmin)"
                   >
                     <UserPlus style={{ width: '13px', height: '13px' }} />
                   </button>
@@ -255,7 +286,7 @@ export default function Navbar({
                       width: '26px', 
                       height: '26px', 
                       borderRadius: '50%', 
-                      background: '#0284c7', 
+                      background: isSuperAdmin ? 'linear-gradient(135deg, #f59e0b, #d97706)' : '#0284c7', 
                       color: '#ffffff', 
                       border: '1px solid rgba(255,255,255,0.2)', 
                       display: 'flex', 
@@ -286,13 +317,22 @@ export default function Navbar({
                 {tabs.map((tab) => {
                   const Icon = tab.icon;
                   const isActive = activeTab === tab.id;
+                  const activeColor = tab.isSuperOnly ? '#fbbf24' : '#38bdf8';
                   return (
                     <button
                       key={tab.id}
                       onClick={() => setActiveTab(tab.id)}
                       className={`btn-tab ${isActive ? 'active' : ''}`}
+                      style={
+                        tab.isSuperOnly
+                          ? {
+                              borderColor: isActive ? 'rgba(245, 158, 11, 0.5)' : 'rgba(245, 158, 11, 0.2)',
+                              color: isActive ? '#fbbf24' : '#fcd34d'
+                            }
+                          : undefined
+                      }
                     >
-                      <Icon style={{ width: '14px', height: '14px', flexShrink: 0, color: isActive ? '#38bdf8' : '#94a3b8' }} />
+                      <Icon style={{ width: '14px', height: '14px', flexShrink: 0, color: isActive ? activeColor : (tab.isSuperOnly ? '#fbbf24' : '#94a3b8') }} />
                       <span className="desktop-tab-label">{tab.label}</span>
                       <span className="mobile-tab-label">{tab.shortLabel}</span>
                     </button>
@@ -377,5 +417,3 @@ export default function Navbar({
     </>
   );
 }
-
-

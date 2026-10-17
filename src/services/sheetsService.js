@@ -5,6 +5,9 @@ const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/13Mk7TOzRQEQDwMX7v
 const CACHE_KEY = 'kbb_kepegawaian_data_cache';
 const CACHE_TIME_KEY = 'kbb_kepegawaian_last_sync';
 
+// In-memory cache of processed employees for fast NIP lookup on LoginPage / AdminUserModal
+let memoryEmployeesCache = null;
+
 export async function fetchLiveKepegawaianData() {
   try {
     const response = await fetch(SHEET_CSV_URL, {
@@ -30,6 +33,7 @@ export async function fetchLiveKepegawaianData() {
           }
           
           const processed = processDataset(results.data);
+          memoryEmployeesCache = processed.employees || [];
           
           // Save to LocalStorage cache
           try {
@@ -62,6 +66,7 @@ export async function fetchLiveKepegawaianData() {
       try {
         const rawRows = JSON.parse(cachedData);
         const processed = processDataset(rawRows);
+        memoryEmployeesCache = processed.employees || [];
         return {
           success: true,
           data: processed,
@@ -76,6 +81,38 @@ export async function fetchLiveKepegawaianData() {
     
     throw err;
   }
+}
+
+/**
+ * Lookup an employee by NIP against BKPSDM KBB Master Data (uses memory/localStorage cache first, or fetches live)
+ */
+export async function findEmployeeByNip(nipInput) {
+  const cleanNip = String(nipInput || '').replace(/\s+/g, '').trim();
+  if (!cleanNip) return null;
+
+  if (!memoryEmployeesCache) {
+    const cachedData = localStorage.getItem(CACHE_KEY);
+    if (cachedData) {
+      try {
+        const rawRows = JSON.parse(cachedData);
+        const processed = processDataset(rawRows);
+        memoryEmployeesCache = processed.employees || [];
+      } catch (e) {
+        console.warn('Failed to parse cached employees for NIP lookup', e);
+      }
+    }
+  }
+
+  if (!memoryEmployeesCache || memoryEmployeesCache.length === 0) {
+    const res = await fetchLiveKepegawaianData();
+    memoryEmployeesCache = res.data?.employees || [];
+  }
+
+  const found = memoryEmployeesCache.find(
+    (emp) => String(emp.nip || '').replace(/\s+/g, '') === cleanNip
+  );
+
+  return found || null;
 }
 
 export function getCachedLastSyncedTime() {
