@@ -308,6 +308,18 @@ export async function startWaServerSocket(forceNewQr = false) {
         console.error('Error processing incoming WA message:', err);
       }
     });
+
+    // Wait up to 5 seconds for QR code or CONNECTED state so the initial /api/wa/connect response already includes qrDataUrl
+    for (let i = 0; i < 20; i++) {
+      if (
+        connectionState.qrDataUrl ||
+        connectionState.status === 'CONNECTED' ||
+        connectionState.status === 'DISCONNECTED'
+      ) {
+        break;
+      }
+      await new Promise((r) => setTimeout(r, 250));
+    }
   } catch (err) {
     connectionState = {
       status: 'DISCONNECTED',

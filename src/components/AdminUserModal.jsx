@@ -339,8 +339,8 @@ export default function AdminUserModal({ onClose, onViewAccountLogs, onAccountDe
         type: 'success',
         text: 'Pengaturan WhatsApp Server & Bot 2 Arah berhasil disimpan!'
       });
-    } catch {
-      setMessage({ type: 'error', text: 'Gagal menyimpan pengaturan WA Server.' });
+    } catch (err) {
+      setMessage({ type: 'error', text: err.message || 'Gagal menyimpan pengaturan WA Server.' });
     } finally {
       setIsSavingWa(false);
     }
@@ -358,8 +358,8 @@ export default function AdminUserModal({ onClose, onViewAccountLogs, onAccountDe
         connectedName: data.connectedName || null,
         lastError: data.lastError || null
       });
-    } catch {
-      setMessage({ type: 'error', text: 'Gagal memulai sesi QR WhatsApp Server.' });
+    } catch (err) {
+      setMessage({ type: 'error', text: err.message || 'Gagal memulai sesi QR WhatsApp Server.' });
     } finally {
       setIsConnectingWa(false);
     }

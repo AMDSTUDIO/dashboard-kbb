@@ -7,7 +7,6 @@ import { handleApiRequest } from './server/apiHandler.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const DIST_DIR = path.join(__dirname, 'dist');
-const PORT = process.env.PORT || 4173;
 
 const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -21,8 +20,8 @@ const MIME_TYPES = {
   '.ico': 'image/x-icon'
 };
 
-const server = http.createServer(async (req, res) => {
-  // 1. Handle /api/* endpoints for centralized account & activity log storage
+async function requestHandler(req, res) {
+  // 1. Handle /api/* endpoints for centralized account, activity log & WhatsApp Server
   const handled = await handleApiRequest(req, res);
   if (handled) return;
 
@@ -50,9 +49,27 @@ const server = http.createServer(async (req, res) => {
     res.statusCode = 404;
     res.end('Build folder (dist/) not found. Please run "npm run build" first.');
   }
-});
+}
 
-server.listen(PORT, '0.0.0.0', () => {
-  console.log(`Dashboard KBB Server running at http://0.0.0.0:${PORT}`);
-});
+function tryListenOnPort(port, isPrimary = false) {
+  const srv = http.createServer(requestHandler);
+  srv.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      if (isPrimary) {
+        console.log(`[Info] Port ${port} sedang digunakan oleh web server lain (mis. Nginx/Apache). API Server tetap aktif pada port cadangan.`);
+      }
+    } else {
+      console.error(`Server error on port ${port}:`, err.message);
+    }
+  });
+  srv.listen(port, '0.0.0.0', () => {
+    console.log(`✅ Dashboard KBB & WhatsApp Server aktif di http://0.0.0.0:${port}`);
+  });
+}
 
+const primaryPort = Number(process.env.PORT) || 8090;
+const candidatePorts = Array.from(new Set([primaryPort, 3001, 4173]));
+
+candidatePorts.forEach((port, idx) => {
+  tryListenOnPort(port, idx === 0);
+});

@@ -66,18 +66,14 @@ export default function LoginPage({ onLoginSuccess }) {
       if (emp) {
         setVerifiedEmployee(emp);
         setRegNama(emp.nama || '');
-        if (emp.noHp && emp.noHp !== '-') {
-          setRegNoHp(emp.noHp);
-        }
+        setRegNoHp(emp.noHp && emp.noHp !== '-' ? emp.noHp : '');
         setRegOpd(emp.opd || 'BKPSDM Kabupaten Bandung Barat');
         setRegJabatan(emp.jabatan || '');
-        if (!regUsername) {
-          const suggested = (emp.nama || '')
-            .toLowerCase()
-            .replace(/[^a-z0-9]/g, '')
-            .substring(0, 14);
-          if (suggested) setRegUsername(suggested);
-        }
+        const suggested = (emp.nama || '')
+          .toLowerCase()
+          .replace(/[^a-z0-9]/g, '')
+          .substring(0, 14);
+        setRegUsername(suggested || '');
         return emp;
       } else {
         setVerifiedEmployee(null);
@@ -334,7 +330,7 @@ export default function LoginPage({ onLoginSuccess }) {
             </div>
           )}
 
-          {/* MODE 1: PUBLIC ACCOUNT REGISTRATION (REQUIRES NIP VERIFICATION + SUPERADMIN APPROVAL) */}
+          {/* MODE 1: PUBLIC ACCOUNT REGISTRATION (STEP 1: CEK NIP -> STEP 2: FORM DETAIL AKUN) */}
           {mode === 'register' ? (
             <form onSubmit={handleRegisterSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '13px', width: '100%' }}>
               <div
@@ -348,10 +344,18 @@ export default function LoginPage({ onLoginSuccess }) {
                   lineHeight: 1.4
                 }}
               >
-                Masukkan <strong>NIP ASN KBB</strong> Anda untuk mengisi profil otomatis. Pendaftaran akun akan diverifikasi dan disetujui (<strong>Approve</strong>) oleh Superadmin.
+                {verifiedEmployee ? (
+                  <>
+                    Data <strong>NIP ASN KBB</strong> ditemukan! Silakan periksa data Anda, pilih <strong>Usulan Hak Akses</strong>, dan buat <strong>Kata Sandi</strong>.
+                  </>
+                ) : (
+                  <>
+                    Langkah 1: Masukkan <strong>18 Digit NIP ASN KBB</strong> Anda lalu klik <strong>Cek NIP</strong>. Formulir akun akan otomatis terbuka setelah NIP terverifikasi.
+                  </>
+                )}
               </div>
 
-              {/* NIP + Cek NIP Button */}
+              {/* STEP 1: NIP + Cek NIP Button (Selalu Muncul Pertama) */}
               <div>
                 <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: '#cbd5e1', marginBottom: '5px' }}>
                   NIP Pegawai (18 Digit) *
@@ -361,19 +365,25 @@ export default function LoginPage({ onLoginSuccess }) {
                     type="text"
                     value={regNip}
                     onChange={(e) => handleNipInputChange(e.target.value)}
-                    placeholder="Contoh: 198501012010011001"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !verifiedEmployee) {
+                        e.preventDefault();
+                        handleVerifyNip(regNip);
+                      }
+                    }}
+                    placeholder="Masukkan 18 digit NIP Anda..."
                     required
                     style={{
                       flex: 1,
                       boxSizing: 'border-box',
-                      padding: '10px 12px',
+                      padding: '11px 12px',
                       background: 'rgba(15, 23, 42, 0.75)',
                       border: verifiedEmployee
                         ? '1px solid rgba(16, 185, 129, 0.5)'
-                        : '1px solid rgba(255, 255, 255, 0.12)',
+                        : '1px solid rgba(56, 189, 248, 0.35)',
                       borderRadius: '10px',
                       color: '#ffffff',
-                      fontSize: '0.84rem',
+                      fontSize: '0.86rem',
                       outline: 'none'
                     }}
                   />
@@ -381,21 +391,19 @@ export default function LoginPage({ onLoginSuccess }) {
                     type="button"
                     onClick={() => handleVerifyNip(regNip)}
                     disabled={isCheckingNip}
-                    className="btn-secondary"
+                    className={verifiedEmployee ? 'btn-secondary' : 'btn-primary'}
                     style={{
-                      padding: '0 14px',
+                      padding: '0 16px',
                       borderRadius: '10px',
-                      fontSize: '0.76rem',
+                      fontSize: '0.78rem',
                       fontWeight: 700,
-                      color: '#38bdf8',
-                      borderColor: 'rgba(56, 189, 248, 0.35)',
                       whiteSpace: 'nowrap'
                     }}
                   >
                     {isCheckingNip ? (
-                      <Loader2 className="spin-icon" style={{ width: '14px', height: '14px' }} />
+                      <Loader2 className="spin-icon" style={{ width: '15px', height: '15px' }} />
                     ) : (
-                      <Search style={{ width: '14px', height: '14px' }} />
+                      <Search style={{ width: '15px', height: '15px' }} />
                     )}
                     {isCheckingNip ? 'Mengecek...' : 'Cek NIP'}
                   </button>
@@ -403,237 +411,290 @@ export default function LoginPage({ onLoginSuccess }) {
 
                 {/* NIP Lookup Feedback */}
                 {verifiedEmployee && (
-                  <div style={{ marginTop: '6px', fontSize: '0.73rem', color: '#34d399', display: 'flex', alignItems: 'center', gap: '5px', fontWeight: 600 }}>
-                    <CheckCircle2 style={{ width: '14px', height: '14px' }} />
-                    Terverifikasi ASN KBB: {verifiedEmployee.statusAsn} ({verifiedEmployee.golongan}) — {verifiedEmployee.jabatan}
+                  <div
+                    style={{
+                      marginTop: '8px',
+                      padding: '8px 10px',
+                      borderRadius: '8px',
+                      background: 'rgba(16, 185, 129, 0.12)',
+                      border: '1px solid rgba(16, 185, 129, 0.35)',
+                      fontSize: '0.74rem',
+                      color: '#34d399',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      fontWeight: 600
+                    }}
+                  >
+                    <CheckCircle2 style={{ width: '15px', height: '15px', flexShrink: 0 }} />
+                    <span>
+                      Terverifikasi ASN KBB: {verifiedEmployee.statusAsn} ({verifiedEmployee.golongan}) — {verifiedEmployee.jabatan}
+                    </span>
                   </div>
                 )}
                 {nipCheckError && (
-                  <div style={{ marginTop: '6px', fontSize: '0.73rem', color: '#fda4af' }}>
+                  <div
+                    style={{
+                      marginTop: '8px',
+                      padding: '8px 10px',
+                      borderRadius: '8px',
+                      background: 'rgba(244, 63, 94, 0.12)',
+                      border: '1px solid rgba(244, 63, 94, 0.3)',
+                      fontSize: '0.74rem',
+                      color: '#fda4af'
+                    }}
+                  >
                     {nipCheckError}
                   </div>
                 )}
               </div>
 
-              {/* Nama Lengkap (Auto-filled from NIP) */}
-              <div>
-                <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: '#cbd5e1', marginBottom: '5px' }}>
-                  Nama Lengkap Pegawai *
-                </label>
-                <input
-                  type="text"
-                  value={regNama}
-                  onChange={(e) => setRegNama(e.target.value)}
-                  placeholder="Otomatis terisi setelah Cek NIP"
-                  required
-                  readOnly={Boolean(verifiedEmployee)}
-                  style={{
-                    width: '100%',
-                    boxSizing: 'border-box',
-                    padding: '10px 12px',
-                    background: verifiedEmployee ? 'rgba(16, 185, 129, 0.08)' : 'rgba(15, 23, 42, 0.7)',
-                    border: '1px solid rgba(255, 255, 255, 0.12)',
-                    borderRadius: '10px',
-                    color: '#ffffff',
-                    fontSize: '0.84rem',
-                    outline: 'none'
-                  }}
-                />
-              </div>
+              {/* STEP 2: HANYA MUNCUL KETIKA NIP DITEMUKAN (verifiedEmployee !== null) */}
+              {verifiedEmployee && (
+                <>
+                  {/* Nama Lengkap (Auto-filled from NIP) */}
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: '#cbd5e1', marginBottom: '5px' }}>
+                      Nama Lengkap Pegawai *
+                    </label>
+                    <input
+                      type="text"
+                      value={regNama}
+                      onChange={(e) => setRegNama(e.target.value)}
+                      required
+                      readOnly
+                      style={{
+                        width: '100%',
+                        boxSizing: 'border-box',
+                        padding: '10px 12px',
+                        background: 'rgba(16, 185, 129, 0.08)',
+                        border: '1px solid rgba(255, 255, 255, 0.12)',
+                        borderRadius: '10px',
+                        color: '#ffffff',
+                        fontSize: '0.84rem',
+                        outline: 'none'
+                      }}
+                    />
+                  </div>
 
-              {/* Nomor WhatsApp Aktif (Auto-filled from Master Data NIP, editable if changed) */}
-              <div>
-                <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: '#cbd5e1', marginBottom: '5px' }}>
-                  Nomor WhatsApp Aktif (Penerima Akun dari Server) *
-                </label>
-                <input
-                  type="tel"
-                  value={regNoHp}
-                  onChange={(e) => setRegNoHp(e.target.value)}
-                  placeholder="Contoh: 081234567890"
-                  required
-                  style={{
-                    width: '100%',
-                    boxSizing: 'border-box',
-                    padding: '10px 12px',
-                    background: 'rgba(15, 23, 42, 0.7)',
-                    border: '1px solid rgba(16, 185, 129, 0.4)',
-                    borderRadius: '10px',
-                    color: '#ffffff',
-                    fontSize: '0.84rem',
-                    outline: 'none'
-                  }}
-                />
-                <div style={{ fontSize: '0.7rem', color: '#94a3b8', marginTop: '4px' }}>
-                  Otomatis ditarik dari Master Data KBB (dapat disesuaikan jika nomor WA aktif Anda berbeda).
-                </div>
-              </div>
+                  {/* OPD / Instansi & Jabatan */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: '#cbd5e1', marginBottom: '5px' }}>
+                        Jabatan
+                      </label>
+                      <input
+                        type="text"
+                        value={regJabatan}
+                        readOnly
+                        style={{
+                          width: '100%',
+                          boxSizing: 'border-box',
+                          padding: '10px 12px',
+                          background: 'rgba(16, 185, 129, 0.08)',
+                          border: '1px solid rgba(255, 255, 255, 0.12)',
+                          borderRadius: '10px',
+                          color: '#cbd5e1',
+                          fontSize: '0.8rem',
+                          outline: 'none'
+                        }}
+                      />
+                    </div>
 
-              {/* Username & Usulan Role */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: '#cbd5e1', marginBottom: '5px' }}>
-                    Username Login *
-                  </label>
-                  <input
-                    type="text"
-                    value={regUsername}
-                    onChange={(e) => setRegUsername(e.target.value)}
-                    placeholder="username"
-                    required
-                    style={{
-                      width: '100%',
-                      boxSizing: 'border-box',
-                      padding: '10px 12px',
-                      background: 'rgba(15, 23, 42, 0.7)',
-                      border: '1px solid rgba(255, 255, 255, 0.12)',
-                      borderRadius: '10px',
-                      color: '#ffffff',
-                      fontSize: '0.84rem',
-                      outline: 'none'
-                    }}
-                  />
-                </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: '#cbd5e1', marginBottom: '5px' }}>
+                        OPD / Unit Kerja
+                      </label>
+                      <input
+                        type="text"
+                        value={regOpd}
+                        readOnly
+                        style={{
+                          width: '100%',
+                          boxSizing: 'border-box',
+                          padding: '10px 12px',
+                          background: 'rgba(16, 185, 129, 0.08)',
+                          border: '1px solid rgba(255, 255, 255, 0.12)',
+                          borderRadius: '10px',
+                          color: '#cbd5e1',
+                          fontSize: '0.8rem',
+                          outline: 'none'
+                        }}
+                      />
+                    </div>
+                  </div>
 
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: '#cbd5e1', marginBottom: '5px' }}>
-                    Usulan Hak Akses
-                  </label>
-                  <select
-                    value={regRole}
-                    onChange={(e) => setRegRole(e.target.value)}
-                    style={{
-                      width: '100%',
-                      boxSizing: 'border-box',
-                      padding: '10px 10px',
-                      background: '#0f172a',
-                      border: '1px solid rgba(255, 255, 255, 0.12)',
-                      borderRadius: '10px',
-                      color: '#ffffff',
-                      fontSize: '0.8rem',
-                      outline: 'none'
-                    }}
-                  >
-                    <option value="Staf Analis Kepegawaian">Staf Analis Kepegawaian</option>
-                    <option value="Pengawas Kepegawaian">Pengawas Kepegawaian</option>
-                    <option value="Admin Eksekutif BKPSDM">Admin Eksekutif BKPSDM</option>
-                    <option value="Pimpinan / Kepala Badan">Pimpinan / Kepala Badan</option>
-                  </select>
-                </div>
-              </div>
+                  {/* Nomor WhatsApp Aktif (Auto-filled from Master Data NIP, editable if changed) */}
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: '#cbd5e1', marginBottom: '5px' }}>
+                      Nomor WhatsApp Aktif (Penerima Akun dari Server) *
+                    </label>
+                    <input
+                      type="tel"
+                      value={regNoHp}
+                      onChange={(e) => setRegNoHp(e.target.value)}
+                      placeholder="Contoh: 081234567890"
+                      required
+                      style={{
+                        width: '100%',
+                        boxSizing: 'border-box',
+                        padding: '10px 12px',
+                        background: 'rgba(15, 23, 42, 0.7)',
+                        border: '1px solid rgba(16, 185, 129, 0.4)',
+                        borderRadius: '10px',
+                        color: '#ffffff',
+                        fontSize: '0.84rem',
+                        outline: 'none'
+                      }}
+                    />
+                    <div style={{ fontSize: '0.7rem', color: '#94a3b8', marginTop: '4px' }}>
+                      Otomatis ditarik dari Master Data KBB (dapat disesuaikan jika nomor WA aktif Anda berbeda).
+                    </div>
+                  </div>
 
-              {/* Info Box Hak Akses Berdasarkan Tingkatan Role */}
-              {ROLE_PERMISSIONS[regRole] && (
-                <div
-                  style={{
-                    padding: '8px 12px',
-                    borderRadius: '8px',
-                    background: 'rgba(15, 23, 42, 0.8)',
-                    border: '1px solid rgba(56, 189, 248, 0.25)',
-                    fontSize: '0.73rem',
-                    color: '#cbd5e1',
-                    lineHeight: 1.4
-                  }}
-                >
-                  <strong style={{ color: '#38bdf8' }}>Cakupan Akses ({regRole}):</strong>{' '}
-                  {ROLE_PERMISSIONS[regRole].description}
-                </div>
-              )}
+                  {/* Username & Usulan Role */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: '#cbd5e1', marginBottom: '5px' }}>
+                        Username Login *
+                      </label>
+                      <input
+                        type="text"
+                        value={regUsername}
+                        onChange={(e) => setRegUsername(e.target.value)}
+                        placeholder="username"
+                        required
+                        style={{
+                          width: '100%',
+                          boxSizing: 'border-box',
+                          padding: '10px 12px',
+                          background: 'rgba(15, 23, 42, 0.7)',
+                          border: '1px solid rgba(255, 255, 255, 0.12)',
+                          borderRadius: '10px',
+                          color: '#ffffff',
+                          fontSize: '0.84rem',
+                          outline: 'none'
+                        }}
+                      />
+                    </div>
 
-              {/* Kata Sandi */}
-              <div>
-                <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: '#cbd5e1', marginBottom: '5px' }}>
-                  Kata Sandi (Min. 6 Karakter) *
-                </label>
-                <div style={{ position: 'relative' }}>
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    value={regPassword}
-                    onChange={(e) => setRegPassword(e.target.value)}
-                    placeholder="Buat Kata Sandi Login"
-                    required
-                    style={{
-                      width: '100%',
-                      boxSizing: 'border-box',
-                      padding: '10px 40px 10px 12px',
-                      background: 'rgba(15, 23, 42, 0.7)',
-                      border: '1px solid rgba(255, 255, 255, 0.12)',
-                      borderRadius: '10px',
-                      color: '#ffffff',
-                      fontSize: '0.84rem',
-                      outline: 'none'
-                    }}
-                  />
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: '#cbd5e1', marginBottom: '5px' }}>
+                        Usulan Hak Akses
+                      </label>
+                      <select
+                        value={regRole}
+                        onChange={(e) => setRegRole(e.target.value)}
+                        style={{
+                          width: '100%',
+                          boxSizing: 'border-box',
+                          padding: '10px 10px',
+                          background: '#0f172a',
+                          border: '1px solid rgba(255, 255, 255, 0.12)',
+                          borderRadius: '10px',
+                          color: '#ffffff',
+                          fontSize: '0.8rem',
+                          outline: 'none'
+                        }}
+                      >
+                        <option value="Staf Analis Kepegawaian">Staf Analis Kepegawaian</option>
+                        <option value="Pengawas Kepegawaian">Pengawas Kepegawaian</option>
+                        <option value="Admin Eksekutif BKPSDM">Admin Eksekutif BKPSDM</option>
+                        <option value="Pimpinan / Kepala Badan">Pimpinan / Kepala Badan</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Info Box Hak Akses Berdasarkan Tingkatan Role */}
+                  {ROLE_PERMISSIONS[regRole] && (
+                    <div
+                      style={{
+                        padding: '8px 12px',
+                        borderRadius: '8px',
+                        background: 'rgba(15, 23, 42, 0.8)',
+                        border: '1px solid rgba(56, 189, 248, 0.25)',
+                        fontSize: '0.73rem',
+                        color: '#cbd5e1',
+                        lineHeight: 1.4
+                      }}
+                    >
+                      <strong style={{ color: '#38bdf8' }}>Cakupan Akses ({regRole}):</strong>{' '}
+                      {ROLE_PERMISSIONS[regRole].description}
+                    </div>
+                  )}
+
+                  {/* Kata Sandi */}
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: '#cbd5e1', marginBottom: '5px' }}>
+                      Kata Sandi (Min. 6 Karakter) *
+                    </label>
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        value={regPassword}
+                        onChange={(e) => setRegPassword(e.target.value)}
+                        placeholder="Buat Kata Sandi Login"
+                        required
+                        style={{
+                          width: '100%',
+                          boxSizing: 'border-box',
+                          padding: '10px 40px 10px 12px',
+                          background: 'rgba(15, 23, 42, 0.7)',
+                          border: '1px solid rgba(255, 255, 255, 0.12)',
+                          borderRadius: '10px',
+                          color: '#ffffff',
+                          fontSize: '0.84rem',
+                          outline: 'none'
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        style={{
+                          position: 'absolute',
+                          right: '10px',
+                          top: '50%',
+                          transform: 'translateY(-50%)',
+                          background: 'none',
+                          border: 'none',
+                          color: '#64748b',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        {showPassword ? <EyeOff style={{ width: '16px', height: '16px' }} /> : <Eye style={{ width: '16px', height: '16px' }} />}
+                      </button>
+                    </div>
+                  </div>
+
                   <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="btn-primary"
                     style={{
-                      position: 'absolute',
-                      right: '10px',
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      background: 'none',
-                      border: 'none',
-                      color: '#64748b',
-                      cursor: 'pointer'
+                      width: '100%',
+                      padding: '12px 16px',
+                      borderRadius: '12px',
+                      justifyContent: 'center',
+                      fontSize: '0.88rem',
+                      fontWeight: 700,
+                      marginTop: '4px',
+                      background: 'linear-gradient(135deg, #10b981, #059669)'
                     }}
                   >
-                    {showPassword ? <EyeOff style={{ width: '16px', height: '16px' }} /> : <Eye style={{ width: '16px', height: '16px' }} />}
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="spin-icon" style={{ width: '18px', height: '18px' }} />
+                        Mengirim Pengajuan Akun...
+                      </>
+                    ) : (
+                      <>
+                        <UserPlus style={{ width: '18px', height: '18px' }} />
+                        Ajukan Pendaftaran Akun (Menunggu Approval)
+                      </>
+                    )}
                   </button>
-                </div>
-              </div>
-
-              {/* OPD / Instansi */}
-              <div>
-                <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: '#cbd5e1', marginBottom: '5px' }}>
-                  OPD / Unit Kerja
-                </label>
-                <input
-                  type="text"
-                  value={regOpd}
-                  onChange={(e) => setRegOpd(e.target.value)}
-                  readOnly={Boolean(verifiedEmployee)}
-                  style={{
-                    width: '100%',
-                    boxSizing: 'border-box',
-                    padding: '10px 12px',
-                    background: verifiedEmployee ? 'rgba(16, 185, 129, 0.08)' : 'rgba(15, 23, 42, 0.7)',
-                    border: '1px solid rgba(255, 255, 255, 0.12)',
-                    borderRadius: '10px',
-                    color: '#cbd5e1',
-                    fontSize: '0.82rem',
-                    outline: 'none'
-                  }}
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="btn-primary"
-                style={{
-                  width: '100%',
-                  padding: '12px 16px',
-                  borderRadius: '12px',
-                  justifyContent: 'center',
-                  fontSize: '0.88rem',
-                  fontWeight: 700,
-                  marginTop: '4px',
-                  background: 'linear-gradient(135deg, #10b981, #059669)'
-                }}
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="spin-icon" style={{ width: '18px', height: '18px' }} />
-                    Mengirim Pengajuan Akun...
-                  </>
-                ) : (
-                  <>
-                    <UserPlus style={{ width: '18px', height: '18px' }} />
-                    Ajukan Pendaftaran Akun (Menunggu Approval)
-                  </>
-                )}
-              </button>
+                </>
+              )}
             </form>
           ) : (
             /* MODE 2: NORMAL LOGIN FORM */

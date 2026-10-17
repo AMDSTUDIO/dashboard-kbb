@@ -256,15 +256,56 @@ export async function fetchClientNetworkInfo() {
   return networkFetchPromise;
 }
 
+let resolvedApiBase = null;
+
+/**
+ * Smart API Fetcher:
+ * Tries same-origin `/api/*` first. If the VPS is serving static files via Nginx/Apache on port 8090
+ * without a `/api/` proxy, automatically discovers `server.js` on port 3001 or 4173!
+ */
+async function apiFetchJson(endpoint, options = {}) {
+  if (typeof window === 'undefined') return null;
+
+  const host = window.location.hostname || 'localhost';
+  const proto = window.location.protocol === 'https:' ? 'https:' : 'http:';
+
+  const candidates = resolvedApiBase !== null
+    ? [resolvedApiBase, '', `${proto}//${host}:3001`, `${proto}//${host}:4173`]
+    : ['', `${proto}//${host}:3001`, `${proto}//${host}:4173`, `http://${host}:3001`];
+
+  const uniqueCandidates = Array.from(new Set(candidates));
+
+  for (const base of uniqueCandidates) {
+    try {
+      const res = await fetch(`${base}${endpoint}`, {
+        ...options,
+        headers: {
+          'Content-Type': 'application/json',
+          ...(options.headers || {})
+        }
+      });
+
+      const contentType = res.headers.get('content-type') || '';
+      if (res.ok && contentType.includes('application/json')) {
+        resolvedApiBase = base;
+        return await res.json();
+      }
+    } catch {
+      // Try next candidate port
+    }
+  }
+
+  return null;
+}
+
 /**
  * Push local state changes to centralized VPS server (`/api/state`)
  */
 async function pushStateToServer({ users, logs, replaceUsers = false, replaceLogs = false }) {
   if (typeof window === 'undefined') return null;
   try {
-    const res = await fetch('/api/state', {
+    const data = await apiFetchJson('/api/state', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         users,
         logs,
@@ -272,17 +313,14 @@ async function pushStateToServer({ users, logs, replaceUsers = false, replaceLog
         replaceLogs
       })
     });
-    if (res.ok) {
-      const data = await res.json();
-      if (data && data.success) {
-        if (Array.isArray(data.users)) {
-          localStorage.setItem(STORAGE_USERS_KEY, JSON.stringify(data.users));
-        }
-        if (Array.isArray(data.logs)) {
-          localStorage.setItem(STORAGE_LOGS_KEY, JSON.stringify(data.logs));
-        }
-        return data;
+    if (data && data.success) {
+      if (Array.isArray(data.users)) {
+        localStorage.setItem(STORAGE_USERS_KEY, JSON.stringify(data.users));
       }
+      if (Array.isArray(data.logs)) {
+        localStorage.setItem(STORAGE_LOGS_KEY, JSON.stringify(data.logs));
+      }
+      return data;
     }
   } catch {
     // Fallback silently to localStorage if static host has no /api/state
@@ -300,9 +338,8 @@ export async function syncWithServer() {
     const localUsers = authService.getAllUsers();
     const localLogs = authService.getActivityLogs();
 
-    const res = await fetch('/api/state', {
+    const data = await apiFetchJson('/api/state', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         users: localUsers,
         logs: localLogs,
@@ -311,17 +348,14 @@ export async function syncWithServer() {
       })
     });
 
-    if (res.ok) {
-      const data = await res.json();
-      if (data && data.success) {
-        if (Array.isArray(data.users)) {
-          localStorage.setItem(STORAGE_USERS_KEY, JSON.stringify(data.users));
-        }
-        if (Array.isArray(data.logs)) {
-          localStorage.setItem(STORAGE_LOGS_KEY, JSON.stringify(data.logs));
-        }
-        return data;
+    if (data && data.success) {
+      if (Array.isArray(data.users)) {
+        localStorage.setItem(STORAGE_USERS_KEY, JSON.stringify(data.users));
       }
+      if (Array.isArray(data.logs)) {
+        localStorage.setItem(STORAGE_LOGS_KEY, JSON.stringify(data.logs));
+      }
+      return data;
     }
   } catch {
     // Fallback to localStorage if /api/state is not reachable
@@ -537,59 +571,76 @@ export const authService = {
    * WhatsApp Server API helpers
    */
   getWaStatus: async () => {
-    try {
-      const res = await fetch('/api/wa/status', { cache: 'no-store' });
-      if (res.ok) return await res.json();
-    } catch {
-      // ignore
-    }
-    return { status: 'DISCONNECTED', config: {} };
+    const data = await apiFetchJson('/api/wa/status', { method: 'GET' });
+    if (data) return data;
+    return {
+      status: 'DISCONNECTED',
+      config: {},
+      backendOffline: true
+    };
   },
 
   saveWaConfig: async (configPayload) => {
-    const res = await fetch('/api/wa/config', {
+    const data = await apiFetchJson('/api/wa/config', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(configPayload)
     });
-    return await res.json();
+    if (!data) {
+      throw new Error(
+        'Server Backend WA (server.js) belum aktif di VPS. Jalankan perintah: pm2 start server.js --name dashboard-kbb'
+      );
+    }
+    return data;
   },
 
   connectWaServer: async (forceNewQr = false) => {
-    const res = await fetch('/api/wa/connect', {
+    const data = await apiFetchJson('/api/wa/connect', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ forceNewQr })
     });
-    return await res.json();
+    if (!data) {
+      throw new Error(
+        'Layanan Backend WA (server.js) belum berjalan di VPS Anda. Di terminal VPS, jalankan: npm install && pm2 start server.js --name dashboard-kbb'
+      );
+    }
+    return data;
   },
 
   disconnectWaServer: async () => {
-    const res = await fetch('/api/wa/disconnect', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' }
+    const data = await apiFetchJson('/api/wa/disconnect', {
+      method: 'POST'
     });
-    return await res.json();
+    return data || { status: 'DISCONNECTED' };
   },
 
   sendTestWaMessage: async (phone) => {
-    const res = await fetch('/api/wa/test', {
+    const data = await apiFetchJson('/api/wa/test', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ phone })
     });
-    return await res.json();
+    if (!data) {
+      return {
+        success: false,
+        reason: 'Layanan Backend WA (server.js) belum berjalan di VPS.'
+      };
+    }
+    return data;
   },
 
   sendCredentialsToWa: async (userObj) => {
     try {
       const originUrl = typeof window !== 'undefined' ? window.location.origin : '';
-      const res = await fetch('/api/wa/notify-approve', {
+      const data = await apiFetchJson('/api/wa/notify-approve', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ user: userObj, originUrl })
       });
-      return await res.json();
+      if (!data) {
+        return {
+          success: false,
+          reason: 'Server WA (server.js) belum aktif di VPS.'
+        };
+      }
+      return data;
     } catch (err) {
       return { success: false, reason: err.message || 'Gagal menghubungi server WA.' };
     }
@@ -668,9 +719,8 @@ export const authService = {
 
     // Trigger WA Server notification to Superadmin & Applicant in background
     if (typeof window !== 'undefined') {
-      fetch('/api/wa/notify-register', {
+      apiFetchJson('/api/wa/notify-register', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           user: pendingUser,
           originUrl: window.location.origin
@@ -766,9 +816,8 @@ export const authService = {
     pushStateToServer({ users: updated, replaceUsers: true });
 
     if (typeof window !== 'undefined' && target.noHp) {
-      fetch('/api/wa/notify-reject', {
+      apiFetchJson('/api/wa/notify-reject', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ user: target })
       }).catch(() => {});
     }
